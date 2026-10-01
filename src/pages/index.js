@@ -3,7 +3,7 @@ import Head from 'next/head'
 
 // 部署到 Vercel 后，可在环境变量里设置 NEXT_PUBLIC_SITE_URL 为自己的域名，
 // 例如 https://markdown-url.vercel.app（不要带结尾斜杠）
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://markdowndown.vercel.app').replace(/\/$/, '');
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://markdown-url.vercel.app').replace(/\/$/, '');
 
 const metadata = {
   title: 'MarkdownDown · 网页转 Markdown',
