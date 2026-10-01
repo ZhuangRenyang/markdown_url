@@ -7,7 +7,7 @@
 
 ## ✨ 功能
 
-- 抓取网页（默认用普通 HTTP 请求，可选浏览器渲染），再用 [Turndown](https://github.com/mixmark-io/turndown) 转成 Markdown
+- 抓取网页（只用普通 HTTP 请求），再用 [Turndown](https://github.com/mixmark-io/turndown) 转成 Markdown
 - 用 [Mozilla Readability](https://github.com/mozilla/readability) 剔除页头、页脚、广告等无关内容
 - 可下载图片、改写为本地引用，并打包成 zip
 - 可选「用 AI 处理 Markdown」：用自定义指令再清洗一遍（加摘要、去链接、改标题层级等）
@@ -32,7 +32,6 @@
 
 | 变量名 | 是否必填 | 说明 |
 | --- | --- | --- |
-| `FETCH_MODE` | 可选 | 抓取模式，默认就是 `plain`，一般不填也行 |
 | `OPENAI_API_KEY` | 可选 | 要用「用 AI 处理 Markdown」才需要 |
 | `OPENAI_BASE_URL` | 可选 | 用第三方中转站时填，OpenAI 官方留空 |
 | `OPENAI_MODEL` | 可选 | 默认 `agnes-3.0-flash` |
@@ -41,26 +40,20 @@
 
 5. 填完环境变量后点 **Redeploy**（环境变量改动需要重新部署才生效）
 
-## 🔧 抓取模式
+## 🔧 抓取方式
 
-大多数网页用普通 HTTP 请求就能拿到正文，只有纯 JS 渲染的 SPA 才需要浏览器。用 `FETCH_MODE` 控制：
+网页抓取**只用普通 HTTP 请求**，不启动任何浏览器后端，部署最简单、零额外依赖。
 
-| 模式 | 行为 |
-| --- | --- |
-| `plain`（**默认**） | 只用普通 HTTP 请求，不启动任何浏览器 —— 不需要部署任何抓取服务 |
-| `auto` | 先发普通请求，正文少于 200 字符（疑似 JS 渲染空壳）才回退浏览器 |
-| `browser` | 只用浏览器渲染抓取，需要 `BROWSERLESS_KEY` 或容器里装了 Chromium |
-
-实测（普通请求，不用浏览器）：
+实测（普通请求）：
 
 | 网页 | 结果 |
 | --- | --- |
 | 阮一峰的博客文章 | 抓到 12513 字符正文 ✅ |
 | React 官方文档 | 抓到 17436 字符正文 ✅ |
 
-`plain` 模式的代价：纯 SPA 抓不到正文（会提示你改用 `auto`/`browser`），部分懒加载图片会漏掉。
+代价：纯 JS 渲染的 SPA 站点可能抓不到正文，部分懒加载图片也会漏掉。一般博客、文档、新闻类网页都没问题。
 
-其它可调项：`MIN_MARKDOWN_LENGTH`（回退阈值，默认 200）、`FETCH_TIMEOUT_MS`（抓网页超时，默认 15000）、
+其它可调项：`FETCH_TIMEOUT_MS`（抓网页超时，默认 15000）、
 `IMG_FETCH_TIMEOUT_MS`（图片超时）、`MAX_IMAGE_BYTES`（单图上限，默认 10MB）。
 
 ## 🤖 AI 处理（可选）
@@ -116,9 +109,7 @@
 
 > 免费实例 15 分钟没访问就会休眠，下次打开要先等它启动，第一次点「转换」可能要等半分钟以上。
 
-如果要在容器里跑浏览器抓 SPA：把 `Dockerfile` 里 `apt-get install chromium` 那段注释打开，
-设 `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`，并把 `FETCH_MODE` 设成 `browser`。
-注意 512MB 内存的免费实例跑 Chromium 很勉强，建议至少 1GB。
+本项目只用普通 HTTP 请求抓网页，不依赖浏览器，因此不需要在容器里安装 Chromium。
 
 ## 💻 本地运行
 

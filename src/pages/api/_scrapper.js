@@ -11,33 +11,11 @@ import { wrapInStyledHtml } from './_htmlwrap';
 // 模型可用环境变量覆盖，默认用 apihub 上可用的 agnes-3.0-flash
 const gptModel = process.env.OPENAI_MODEL || 'agnes-3.0-flash';
 const gptModelBig = process.env.OPENAI_MODEL_BIG || process.env.OPENAI_MODEL || 'agnes-3.0-flash';
-const browserWSEndpoint = process.env.BROWSERLESS_KEY? `https://chrome.browserless.io?token=${process.env.BROWSERLESS_KEY}`:undefined;
 
-// 抓取策略：
-//   auto    （默认）先用普通 HTTP 请求，内容太少再回退到浏览器
-//   plain   只用普通 HTTP 请求，完全不启动浏览器（默认推荐，不用任何浏览器后端）
-//   browser 只用浏览器渲染抓取（兼容性最好，需要 Browserless 或本地 Chromium）
-const FETCH_MODE = (process.env.FETCH_MODE || 'plain').toLowerCase();
-// auto 模式下，普通请求抓出的正文少于这个字符数就认为「可能是 JS 渲染的空壳」，改用浏览器
-const MIN_MARKDOWN_LENGTH = Number(process.env.MIN_MARKDOWN_LENGTH || 200);
+// 抓取策略：只用普通 HTTP 请求，不启动任何浏览器（最简单、零额外依赖）
 const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || 15000);
 
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-
-// Puppeteer 只在 browser 模式（或 auto 回退）下才需要，按需加载以免把 Chromium 打进函数包
-async function loadPuppeteer(){
-  try {
-    const mod = await import('puppeteer');
-    return mod.default || mod;
-  } catch (e) {
-    throw new Error(
-      '没有可用的浏览器后端 / No browser backend available. ' +
-      '请配置 BROWSERLESS_KEY，或在容器里安装 puppeteer。' +
-      '若不需要抓 SPA，把 FETCH_MODE 设为 plain 即可。' +
-      'Original error: ' + e.message
-    );
-  }
-}
 
 // 普通 HTTP 请求：不消耗浏览器额度，速度快，但拿不到 JS 渲染后的内容
 async function fetchHtmlPlain(url){
@@ -67,26 +45,6 @@ async function fetchHtmlPlain(url){
   }
 }
 
-// 浏览器渲染抓取：Browserless 远程浏览器 > 本地 Puppeteer
-let browser;
-async function fetchHtmlWithBrowser(url){
-  console.log('[browser] 启动浏览器...');
-  if (!browser){
-    const puppeteer = await loadPuppeteer();
-    if (browserWSEndpoint){
-      browser = await puppeteer.connect({browserWSEndpoint});
-    }
-    else{
-      browser = await puppeteer.launch();
-    }
-  }
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: 'networkidle0' });
-  const data = await page.content();
-  await page.close();
-  return data;
-}
-
 // HTML -> Markdown
 function htmlToMarkdown(data, url, removeNonContent){
   const doc = new JSDOM(data, { url });
@@ -107,36 +65,15 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
   try {
     let markdown;
 
-    if (FETCH_MODE === 'browser'){
-      const data = await fetchHtmlWithBrowser(url);
+    try {
+      const data = await fetchHtmlPlain(url);
       markdown = htmlToMarkdown(data, url, removeNonContent);
-    }
-    else{
-      let needBrowser = false;
-      try {
-        const data = await fetchHtmlPlain(url);
-        markdown = htmlToMarkdown(data, url, removeNonContent);
-        console.log(`[plain] 成功，正文 ${markdown.length} 字符`);
-        if (FETCH_MODE === 'auto' && markdown.trim().length < MIN_MARKDOWN_LENGTH){
-          console.log(`[plain] 正文不足 ${MIN_MARKDOWN_LENGTH} 字符，疑似需要 JS 渲染`);
-          needBrowser = true;
-        }
-      } catch (e) {
-        if (FETCH_MODE === 'plain'){
-          throw new Error(
-            `抓取失败：${e.message}。` +
-            '该网页可能需要 JS 渲染或拒绝了请求，可把 FETCH_MODE 改成 auto 或 browser 再试。'
-          );
-        }
-        console.log(`[plain] 失败（${e.message}），改用浏览器`);
-        needBrowser = true;
-      }
-
-      if (needBrowser){
-        const data = await fetchHtmlWithBrowser(url);
-        markdown = htmlToMarkdown(data, url, removeNonContent);
-        console.log(`[browser] 成功，正文 ${markdown.length} 字符`);
-      }
+      console.log(`[plain] 成功，正文 ${markdown.length} 字符`);
+    } catch (e) {
+      throw new Error(
+        `抓取失败：${e.message}。` +
+        '该网页可能需要 JS 渲染或拒绝了请求。'
+      );
     }
 
     fs.writeFileSync(filePath, markdown, 'utf8');
@@ -165,10 +102,6 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
     fs.writeFileSync(filePath.replace(".md", ".html"), wrapInStyledHtml(html), 'utf8');
   } catch (error) {
     console.error(`Error fetching clean markdown from URL: ${error.message}`);
-    if (browser){
-      try { browser.close(); } catch (e) { /* ignore */ }
-      browser = null;
-    }
     throw error;
   }
 };
