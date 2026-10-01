@@ -4,7 +4,15 @@ import OpenAI from "openai";
 const apiKey = process.env.OPENAI_API_KEY || "APIKEY_NOT_FOUND";
 const baseURL = process.env.OPENAI_BASE_URL || undefined;
 
-const openai = new OpenAI(baseURL ? { apiKey, baseURL } : { apiKey });
+// 每次调用按需创建 client：优先用请求里带来的凭据（前端填的），没有才回退到环境变量
+function createClient(aiConfig = {}) {
+  const key = aiConfig.apiKey || apiKey;
+  const base = aiConfig.baseURL || baseURL;
+  if (!key || key === "APIKEY_NOT_FOUND") {
+    throw new Error("未配置 API 密钥 / No API key configured");
+  }
+  return new OpenAI(base ? { apiKey: key, baseURL: base } : { apiKey: key });
+}
 
 function systemPromptFor(instructions) {
   return `
@@ -40,7 +48,8 @@ function extractJson(text) {
   }
 }
 
-export async function runGPT(model, markdown, instructions) {
+export async function runGPT(model, markdown, instructions, aiConfig = {}) {
+  const openai = createClient(aiConfig);
   const basePayload = {
     model: model,
     messages: [

@@ -19,6 +19,13 @@ export default async function handler(req, res) {
       url = 'http://' + url;
   }
 
+  // 用户在前端设置里填的凭据（每次请求随请求头带来，不落服务器）
+  const aiConfig = {
+    apiKey: req.headers["x-api-key"],
+    baseURL: req.headers["x-base-url"],
+    model: req.headers["x-model"],
+  };
+
   console.log(`Fetching ${url}`);
   // random tmp folder in tmp directory
   const folder = path.join(os.tmpdir(), `markdd-${Math.random().toString(36).substring(7)}`);
@@ -49,7 +56,8 @@ export default async function handler(req, res) {
       imagesBasePathOverride,
       removeNonContent === true,
       applyGpt,
-      bigModel === true
+      bigModel === true,
+      aiConfig
     );
 
     if (downloadImages === true){

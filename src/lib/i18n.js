@@ -62,6 +62,33 @@ const zh = {
   downloadStartedTitle: "开始下载",
   downloadStartedDesc: "Markdown 与图片正在以 zip 压缩包形式下载。",
 
+  // 设置弹窗
+  settingsTitle: "AI 服务设置",
+  settingsSubtitle:
+    "密钥只保存在当前浏览器的 localStorage 中，不会上传到服务器，也不会写进代码仓库。",
+  apiSite: "API 站点",
+  baseUrl: "Base URL",
+  apiKey: "API 密钥",
+  model: "模型（可选）",
+  modelPlaceholder: "留空则用服务端默认模型",
+  show: "显示",
+  hide: "隐藏",
+  keyWarning: "不要在共享设备或公开页面上保存真实密钥。",
+  clearKey: "清除本地密钥",
+  saveConnection: "保存连接",
+  status: "当前状态",
+  statusConfigured: "已配置",
+  statusNotConfigured: "未配置",
+  statusSaved: "已保存",
+  testConnection: "测试连接",
+  testing: "测试中...",
+  testOk: "连接成功",
+  testFail: "连接失败",
+  modelsAvailable: "个可用模型",
+  needApiKeyTitle: "缺少 API 密钥",
+  needApiKeyDesc:
+    "勾选了「用 AI 处理 Markdown」，但还没配置密钥。请在设置里填写 API 密钥后再试。",
+
   footerMadeBy: "由",
 };
 
@@ -121,6 +148,33 @@ const en = {
   downloadStartedTitle: "Download Started",
   downloadStartedDesc:
     "Your markdown and images are being downloaded as a zip file.",
+
+  // Settings dialog
+  settingsTitle: "AI Service Settings",
+  settingsSubtitle:
+    "The key is stored in this browser's localStorage only. It is never uploaded to the server or committed to the repo.",
+  apiSite: "API site",
+  baseUrl: "Base URL",
+  apiKey: "API key",
+  model: "Model (optional)",
+  modelPlaceholder: "Leave empty to use the server default",
+  show: "Show",
+  hide: "Hide",
+  keyWarning: "Do not save a real key on a shared device or public page.",
+  clearKey: "Clear local key",
+  saveConnection: "Save connection",
+  status: "Status",
+  statusConfigured: "Configured",
+  statusNotConfigured: "Not configured",
+  statusSaved: "Saved",
+  testConnection: "Test connection",
+  testing: "Testing...",
+  testOk: "Connected",
+  testFail: "Failed",
+  modelsAvailable: "models available",
+  needApiKeyTitle: "Missing API key",
+  needApiKeyDesc:
+    "You enabled AI processing but no key is configured. Add an API key in settings first.",
 
   footerMadeBy: "Made by",
 };

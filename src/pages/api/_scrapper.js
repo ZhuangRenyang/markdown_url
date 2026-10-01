@@ -103,7 +103,7 @@ function htmlToMarkdown(data, url, removeNonContent){
 }
 
 // Define the function using ES6 arrow function syntax
-const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false) => {
+const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}) => {
   try {
     let markdown;
 
@@ -152,7 +152,9 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
       const curMarkdown = fs.readFileSync(filePath, "utf8");
       console.log("Applying AI...");
       const instructions = applyGpt
-      const gptResponse = await runGPT(bigModel?gptModelBig:gptModel, curMarkdown, instructions);
+      // 用户在前端填的模型和接口优先，其次才是服务端环境变量
+      const model = aiConfig.model || (bigModel ? gptModelBig : gptModel);
+      const gptResponse = await runGPT(model, curMarkdown, instructions, aiConfig);
       markdown = gptResponse.content || markdown;
       fs.writeFileSync(filePath, markdown, 'utf8');
     }

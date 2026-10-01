@@ -82,7 +82,7 @@ export function LanguageSwitch() {
   const other = SUPPORTED_LANGUAGES.find((l) => l.code !== lang);
 
   return (
-    <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full border border-gray-200 bg-white/80 p-1 text-xs shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/70">
+    <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-white/80 p-1 text-xs shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/70">
       {SUPPORTED_LANGUAGES.map((item) => {
         const active = item.code === lang;
         return (

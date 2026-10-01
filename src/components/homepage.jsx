@@ -39,6 +39,9 @@ import {
 } from "@/components/ui/tooltip"
  import { track } from "./analytics"
 import { LanguageSwitch, useLanguage } from "./language-provider"
+import { SettingsDialog } from "./settings-dialog"
+import { useSettings } from "./settings-provider"
+import { Settings as SettingsIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import {
   Card,
@@ -76,6 +79,8 @@ function HelpTooltip({children}){
 export function Homepage() {
   const { toast } = useToast()
   const { t } = useLanguage()
+  const { apiKey, baseUrl, model, hasKey } = useSettings()
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [imagesDir, setImagesDir] = useState("images");
   const [downloadImages, setDownloadImages] = useState(false);
@@ -138,14 +143,26 @@ export function Homepage() {
       bigModel
     }
 
+    // 用了 AI 处理却没填密钥，直接拦下来，别浪费一次转换
+    if (gptEnabled && applyGpt && !hasKey){
+      return toast({
+        title: t("needApiKeyTitle"),
+        description: t("needApiKeyDesc"),
+      })
+    }
+
     track("Convert Clicked", payload)
+
+    // 密钥只在这次请求里随请求头传给服务端，不会存到服务器
+    const headers = { "Content-Type": "application/json" }
+    if (apiKey) headers["x-api-key"] = apiKey
+    if (baseUrl) headers["x-base-url"] = baseUrl
+    if (model) headers["x-model"] = model
 
     setIsLoading(true)
     const resp = await fetch("/api/tomd", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers,
       body: JSON.stringify(payload)
     });
     // const resp = await fetch(fullUrl)
@@ -192,7 +209,21 @@ export function Homepage() {
   return (
     (<main className="w-full min-h-[100vh] py-6 space-y-6 flex justify-center items-center relative">
       <Toaster />
-      <LanguageSwitch />
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          title={t("settingsTitle")}
+          aria-label={t("settingsTitle")}
+          className={
+            "flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/80 shadow-sm backdrop-blur transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900/70 dark:hover:bg-gray-800 " +
+            (hasKey ? "text-orange-500" : "text-gray-500")
+          }>
+          <SettingsIcon className="h-4 w-4" />
+        </button>
+        <LanguageSwitch />
+      </div>
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <div className="container flex flex-col items-center justify-center">
         <div className="space-y-2 text-center mb-10">
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">📥<br/>Markdown<b>Down</b></h1>
