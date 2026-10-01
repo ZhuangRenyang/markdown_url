@@ -78,7 +78,27 @@ https://markdownworker.<你的子域>.workers.dev
 | **Render** 免费 | ✅ 可以 | 512MB 内存 / 0.1 CPU，**15 分钟无流量会休眠**，冷启动要约 30–60 秒 |
 | **Koyeb** 免费 | ✅ 可以 | 512MB 内存 / 0.1 vCPU，不休眠，同样用 Docker 部署 |
 | **Netlify** 免费 | ⚠️ 不推荐 | 同步函数响应体上限 **6MB**，下载带图片的 zip 很容易超；且要装 `@netlify/plugin-nextjs` |
-| **Cloudflare Pages** | ❌ 不行 | Workers 运行时没有 `fs`，而本项目要写临时文件、用 archiver 打 zip |
+| **Cloudflare Pages / Workers** | ❌ 免费版不行 | CPU 上限 **10ms/请求**，而转换一个网页要几百毫秒到几秒；且没有真正的文件系统 |
+
+### 关于 Cloudflare：想统一到一家行不行？
+
+**免费版不行**，卡在两处：
+
+1. **CPU 上限 10ms/请求**。网页转 Markdown 要跑 JSDOM 解析 → Readability 提取 → Turndown 转换，
+   通常几百毫秒到几秒，远超 10ms，请求会被直接掐断。
+2. **没有真正的文件系统**。本项目要把 Markdown 和图片写进临时目录，再用 archiver 打 zip。
+   Workers 运行时没有 fs（新出的 `enable_nodejs_fs_module` 也只是受限的 `/tmp` 兼容层）。
+
+**如果愿意每月 $5 开 Workers 付费，Cloudflare 反而成了最优雅的方案**：
+
+- CPU 上限提到 30 秒/请求，转换够用了
+- 用 [Cloudflare Containers](https://developers.cloudflare.com/containers/)（2026 年 4 月已正式发布）
+  跑完整 Node.js 容器，**有真实文件系统**，现在这份代码几乎不用改就能跑
+- 容器按实际运行时间计费（每 10ms 计一次），闲置不花钱 —— 比 Render 免费版「休眠 + 冷启动」体验好得多
+- 于是浏览器抓取（Worker）和前端转换（Container）都在 Cloudflare 一家，不用跨平台
+
+折中做法：继续免费的话，就保持「Cloudflare Worker 抓网页 + Vercel/Render/Koyeb 跑前端」这种拆分，
+反正前端那边几乎不耗资源。
 
 ### 部署到 Render（可选）
 
