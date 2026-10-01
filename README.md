@@ -119,7 +119,3 @@ npm run dev
 ```
 
 本地配置写在 `.env.local`（不会进 git），可以直接照着 `.env.example` 抄一份改。
-
-## 📄 License
-
-MIT，详见 [LICENSE.md](./LICENSE.md)。
