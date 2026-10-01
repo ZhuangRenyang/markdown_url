@@ -45,12 +45,59 @@ async function fetchHtmlPlain(url){
   }
 }
 
+// 还原懒加载图片并解析成绝对地址，这样 Turndown 能抓到真实链接、_imgProcessor 也能下载。
+// 纯 DOM 操作，不需要浏览器。
+function normalizeImages(doc, baseUrl){
+  const resolve = (val) => {
+    if (!val) return val;
+    try { return new URL(val, baseUrl).href; } catch { return val; }
+  };
+  const normSrcset = (ss) => ss.split(',').map((s) => {
+    const parts = s.trim().split(/\s+/);
+    const u = parts.shift();
+    return parts.length ? `${resolve(u)} ${parts.join(' ')}` : resolve(u);
+  }).join(', ');
+
+  doc.querySelectorAll('img').forEach((img) => {
+    const curSrc = img.getAttribute('src') || '';
+    const isPlaceholder = !curSrc || /^data:/i.test(curSrc);
+    const real = img.getAttribute('data-src') || img.getAttribute('data-original') || img.getAttribute('data-lazy-src');
+    if (real && isPlaceholder){
+      // 懒加载占位图 + data-src：用真实地址替换
+      img.setAttribute('src', resolve(real));
+    } else if (curSrc && !/^https?:/i.test(curSrc) && !/^data:/i.test(curSrc)){
+      // 相对地址（非 data:）：解析成绝对地址，否则 _imgProcessor 不会下载
+      img.setAttribute('src', resolve(curSrc));
+    }
+    if (img.getAttribute('srcset')){
+      img.setAttribute('srcset', normSrcset(img.getAttribute('srcset')));
+    }
+    const lazySrcset = img.getAttribute('data-srcset') || img.getAttribute('data-originalset');
+    if (lazySrcset && !img.getAttribute('srcset')){
+      img.setAttribute('srcset', normSrcset(lazySrcset));
+    }
+    // 只有 srcset 没有 src 时，从 srcset 取第一张补上 src
+    if (!img.getAttribute('src') && img.getAttribute('srcset')){
+      const first = img.getAttribute('srcset').split(',')[0].trim().split(/\s+/)[0];
+      if (first) img.setAttribute('src', first);
+    }
+  });
+
+  doc.querySelectorAll('source').forEach((s) => {
+    const raw = s.getAttribute('data-srcset') || s.getAttribute('data-src') || s.getAttribute('srcset');
+    if (raw){
+      s.setAttribute('srcset', normSrcset(raw));
+    }
+  });
+}
+
 // HTML -> Markdown
 function htmlToMarkdown(data, url, removeNonContent){
   const doc = new JSDOM(data, { url });
+  normalizeImages(doc, url);
   const turndownService = new TurndownService();
   if (!removeNonContent){
-    return turndownService.turndown(data);
+    return turndownService.turndown(doc.window.document.body.innerHTML);
   }
   const reader = new Readability(doc.window.document);
   const article = reader.parse();
