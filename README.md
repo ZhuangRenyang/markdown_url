@@ -65,6 +65,39 @@ https://markdownworker.<你的子域>.workers.dev
 - `next.config.mjs` 里也排除了 puppeteer 相关文件，不会打进函数包
 - 线上若既没配 `HTMLFETCH_API` 也没配 `BROWSERLESS_KEY`，转换会直接报「Puppeteer 不可用」
 
+## 🧭 想换别的免费平台？
+
+先说重点：**这个项目的资源大头是「抓取网页的浏览器」，不是前端放哪。**
+前端（Next.js）放任何平台都只做转换和打包，几乎不耗资源；真正吃配额的是 Cloudflare 的浏览器渲染
+（免费版每天 10 分钟浏览器时长，抓一个网页通常 3–10 秒，一天够抓几十到上百个）。
+所以换平台并不能省下浏览器用量，只能换一个宿主环境。
+
+| 平台 | 能不能跑 | 关键限制 |
+| --- | --- | --- |
+| **Vercel** Hobby | ✅ 推荐 | 函数最长 60 秒，包体积 250MB，最省事 |
+| **Render** 免费 | ✅ 可以 | 512MB 内存 / 0.1 CPU，**15 分钟无流量会休眠**，冷启动要约 30–60 秒 |
+| **Koyeb** 免费 | ✅ 可以 | 512MB 内存 / 0.1 vCPU，不休眠，同样用 Docker 部署 |
+| **Netlify** 免费 | ⚠️ 不推荐 | 同步函数响应体上限 **6MB**，下载带图片的 zip 很容易超；且要装 `@netlify/plugin-nextjs` |
+| **Cloudflare Pages** | ❌ 不行 | Workers 运行时没有 `fs`，而本项目要写临时文件、用 archiver 打 zip |
+
+### 部署到 Render（可选）
+
+仓库里已放好 `Dockerfile` 和 `render.yaml`：
+
+1. push 代码后，在 [render.com](https://render.com) → **New → Blueprint** → 选这个仓库
+2. Render 会自动读 `render.yaml`，实例类型选 **Free**
+3. 环境变量填 `HTMLFETCH_API`（Cloudflare Worker 地址）；`OPENAI_API_KEY` 可选
+4. 等首次构建完成（Docker 构建比较慢，约 5–10 分钟）
+
+> 免费实例 15 分钟没访问就会休眠，下次打开要先等它启动，第一次点「转换」可能要等半分钟以上。
+> 想避免休眠，只能升级套餐或用定时任务每 10 分钟访问一次首页（不保证稳定）。
+
+### 想彻底不依赖 Cloudflare 的浏览器额度？
+
+可以在容器里自带 Chromium：把 `Dockerfile` 里那段 `apt-get install chromium` 的注释打开，
+并把 `PUPPETEER_EXECUTABLE_PATH` 指到 `/usr/bin/chromium`，然后**不要**配 `HTMLFETCH_API`，
+程序会自动改用本地 Puppeteer。注意 512MB 内存的免费实例跑 Chromium 会比较勉强，建议至少 1GB。
+
 ## 💻 本地运行
 
 ```bash

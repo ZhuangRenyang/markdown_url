@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: markdowndown
+    runtime: docker
+    plan: free
+    # 免费可选区域：oregon(美西) / frankfurt(欧洲) / singapore(新加坡)
+    region: singapore
+    branch: main
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Cloudflare Worker 地址，用于抓取网页（必填，结尾不要带斜杠）
+      - key: HTMLFETCH_API
+        sync: false
+      # 可选：GPT 处理功能
+      - key: OPENAI_API_KEY
+        sync: false
+      # 可选：自己的站点地址，用于生成分享卡片
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+      # 若容器内跑 Chromium（Dockerfile 里打开了那段注释），需要这个
+      # - key: PUPPETEER_EXECUTABLE_PATH
+      #   value: /usr/bin/chromium
