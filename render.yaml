@@ -10,11 +10,14 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Cloudflare Worker 地址，用于抓取网页（必填，结尾不要带斜杠）
-      - key: HTMLFETCH_API
-        sync: false
-      # 可选：GPT 处理功能
+      # AI 接口（可选，用于「用 AI 处理 Markdown」）
       - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        sync: false
+      - key: OPENAI_MODEL
+        sync: false
+      - key: OPENAI_MODEL_BIG
         sync: false
       # 可选：自己的站点地址，用于生成分享卡片
       - key: NEXT_PUBLIC_SITE_URL

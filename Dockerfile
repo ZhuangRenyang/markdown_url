@@ -1,6 +1,6 @@
 # 用于 Render / Koyeb / Fly.io 等支持 Docker 的平台
-# 说明：网页抓取默认走 Cloudflare Worker（HTMLFETCH_API），所以镜像里不装 Chromium。
-#      如果你想让容器自己跑浏览器，把下面 CHROMIUM 那几行的注释去掉。
+# 说明：默认用普通 HTTP 请求抓网页（FETCH_MODE=plain），所以镜像里不装 Chromium。
+#      只有在 FETCH_MODE=auto/browser 且要抓 SPA 时才需要浏览器，把下面 CHROMIUM 注释打开。
 FROM node:20-slim
 
 WORKDIR /app

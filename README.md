@@ -7,10 +7,10 @@
 
 ## ✨ 功能
 
-- 用 [Puppeteer](https://pptr.dev/) 或 Cloudflare 浏览器渲染抓取网页，再用 [Turndown](https://github.com/mixmark-io/turndown) 转成 Markdown
+- 抓取网页（默认用普通 HTTP 请求，可选浏览器渲染），再用 [Turndown](https://github.com/mixmark-io/turndown) 转成 Markdown
 - 用 [Mozilla Readability](https://github.com/mozilla/readability) 剔除页头、页脚、广告等无关内容
 - 可下载图片、改写为本地引用，并打包成 zip
-- 可选「GPT 处理」：用自定义指令再清洗一遍 Markdown（摘要、去链接、改标题层级等）
+- 可选「用 AI 处理 Markdown」：用自定义指令再清洗一遍（加摘要、去链接、改标题层级等）
 - 同时会生成一份干净排版的 HTML 版本
 
 ## 🌐 界面语言
@@ -21,113 +21,74 @@
 - 选择会记在浏览器本地（localStorage），下次打开仍是上次的语言
 - `src/lib/i18n.js` 里集中管理所有文案，新增界面文字时同时补 `zh` 和 `en` 两份即可
 
-## 🚀 部署到 Vercel（推荐方案）
+## 🚀 部署到 Vercel
 
-Vercel 的 Serverless Function 有 250MB 体积上限，装不下 Puppeteer 自带的 Chromium。
-所以**网页抓取交给免费的 Cloudflare Worker**，Next.js 只负责转换和打包。
-
-### 第一步（可选）：部署 Cloudflare Worker 抓网页
-
-> 现在只有**确实需要 JS 渲染**的网页（SPA、React/Vue 单页应用）才用得上浏览器。
-> 大多数博客、文档、新闻站用普通 HTTP 请求就能拿到正文，所以这一步可以跳过。
-> 详见下面「抓取模式」。
-
-```bash
-cd cfworker
-npm install
-npx wrangler login        # 首次需要登录 Cloudflare 账号
-npx wrangler deploy       # 部署后会得到一串网址
-```
-
-部署成功会输出类似：
-
-```
-https://markdownworker.<你的子域>.workers.dev
-```
-
-复制这个地址（**结尾不要带斜杠**）。Cloudflare 免费计划包含每天 10 分钟的浏览器渲染额度，个人使用足够。
-
-### 第二步：部署到 Vercel
+不需要任何浏览器后端，直接部署就行。
 
 1. 把代码推到 GitHub（本项目仓库：`https://github.com/ZhuangRenyang/markdown_url.git`）
 2. 打开 [vercel.com](https://vercel.com) → **Add New → Project** → 导入该仓库
 3. Framework Preset 保持 **Next.js**，其它不用改，直接点 **Deploy**
-4. 在 **Settings → Environment Variables** 里添加：
+4. 在 **Settings → Environment Variables** 里按需添加：
 
 | 变量名 | 是否必填 | 说明 |
 | --- | --- | --- |
-| `FETCH_MODE` | 可选 | 抓取模式，默认 `auto`。详见下面「抓取模式」 |
-| `HTMLFETCH_API` | 可选 | Cloudflare Worker 地址，只在需要 JS 渲染时兜底 |
-| `OPENAI_API_KEY` | 可选 | 要用「GPT 处理」才需要 |
-| `BROWSERLESS_KEY` | 可选 | 不想用 Cloudflare 时，改用 browserless.io 远程浏览器 |
-| `NEXT_PUBLIC_SITE_URL` | 可选 | 你的 Vercel 域名，用于生成分享卡片链接 |
+| `FETCH_MODE` | 可选 | 抓取模式，默认就是 `plain`，一般不填也行 |
+| `OPENAI_API_KEY` | 可选 | 要用「用 AI 处理 Markdown」才需要 |
+| `OPENAI_BASE_URL` | 可选 | 用第三方中转站时填，OpenAI 官方留空 |
+| `OPENAI_MODEL` | 可选 | 默认 `agnes-3.0-flash` |
+| `OPENAI_MODEL_BIG` | 可选 | 勾选「更强的模型」时用的模型 |
+| `NEXT_PUBLIC_SITE_URL` | 可选 | 你的域名，用于生成分享卡片链接 |
 
 5. 填完环境变量后点 **Redeploy**（环境变量改动需要重新部署才生效）
 
-### 抓取模式：能不能不用 Cloudflare Worker？
+## 🔧 抓取模式
 
-能。通过 `FETCH_MODE` 控制，三种模式：
+大多数网页用普通 HTTP 请求就能拿到正文，只有纯 JS 渲染的 SPA 才需要浏览器。用 `FETCH_MODE` 控制：
 
-| 模式 | 行为 | 什么时候用 |
-| --- | --- | --- |
-| `auto`（默认） | **先发普通 HTTP 请求**；如果抓到的正文少于 200 字符（说明是 JS 渲染的空壳），才回退到浏览器 | 推荐。省浏览器额度，又不会漏掉 SPA |
-| `plain` | 只用普通 HTTP 请求，**完全不启动浏览器** | 完全不想碰 Cloudflare / 只想抓博客文档站 |
-| `browser` | 只用浏览器渲染抓取（原来的行为） | 主要抓 SPA，或普通请求老是被拒绝时 |
+| 模式 | 行为 |
+| --- | --- |
+| `plain`（**默认**） | 只用普通 HTTP 请求，不启动任何浏览器 —— 不需要部署任何抓取服务 |
+| `auto` | 先发普通请求，正文少于 200 字符（疑似 JS 渲染空壳）才回退浏览器 |
+| `browser` | 只用浏览器渲染抓取，需要 `BROWSERLESS_KEY` 或容器里装了 Chromium |
 
-实测（普通请求，不需要浏览器）：
+实测（普通请求，不用浏览器）：
 
 | 网页 | 结果 |
 | --- | --- |
 | 阮一峰的博客文章 | 抓到 12513 字符正文 ✅ |
 | React 官方文档 | 抓到 17436 字符正文 ✅ |
 
-**也就是说：`FETCH_MODE=plain` 时，你一个 Cloudflare Worker 都不用部署。**
-代价是纯 JS 渲染的站点（页面源码里几乎是空的）抓不到正文，以及部分懒加载的图片会漏掉。
-想省事就留着 `auto`——普通请求能搞定的绝不碰浏览器，搞不定的才消耗额度。
+`plain` 模式的代价：纯 SPA 抓不到正文（会提示你改用 `auto`/`browser`），部分懒加载图片会漏掉。
 
-另外两个可选环境变量：`MIN_MARKDOWN_LENGTH`（回退阈值，默认 200）、`FETCH_TIMEOUT_MS`（请求超时，默认 15000）。
+其它可调项：`MIN_MARKDOWN_LENGTH`（回退阈值，默认 200）、`FETCH_TIMEOUT_MS`（抓网页超时，默认 15000）、
+`IMG_FETCH_TIMEOUT_MS`（图片超时）、`MAX_IMAGE_BYTES`（单图上限，默认 10MB）。
 
-### 关于 Puppeteer
+## 🤖 AI 处理（可选）
 
-- 仓库里已放 `.npmrc`（`puppeteer_skip_download=true`），Vercel 安装依赖时**不会下载 Chromium**
-- `next.config.mjs` 里也排除了 puppeteer 相关文件，不会打进函数包
-- 只有在 `browser` 模式、或 `auto` 模式回退时才会用到浏览器后端；
-  如果此时既没配 `HTMLFETCH_API` 也没配 `BROWSERLESS_KEY`，会报「浏览器不可用」
+支持 OpenAI 官方，也支持任何 OpenAI 兼容的中转站（设 `OPENAI_BASE_URL` 即可）。
+
+本项目用的中转站是 `https://apihub.agnes-ai.com/v1`，实测可用模型：
+
+| 模型 | 状态 |
+| --- | --- |
+| `agnes-3.0-flash` | ✅ 可用，支持 JSON 模式（默认） |
+| `agnes-2.5-flash` | ✅ 可用 |
+| `agnes-2.0-flash` | ✅ 可用 |
+| `agnes-2.5-pro` | ❌ 报余额不足，别用 |
+
+所以界面上「使用更强的模型」这个勾选项，建议**先别勾**，除非你确认账户里有余额。
+
+实现原理：让模型只返回一组「替换操作」，再由程序把改动应用到原文上——比让它原样吐出整篇 Markdown 可靠得多。见 [src/pages/api/_gpt.js](./src/pages/api/_gpt.js)。
 
 ## 🧭 想换别的免费平台？
-
-先说重点：**这个项目的资源大头是「抓取网页的浏览器」，不是前端放哪。**
-前端（Next.js）放任何平台都只做转换和打包，几乎不耗资源；真正吃配额的是 Cloudflare 的浏览器渲染
-（免费版每天 10 分钟浏览器时长，抓一个网页通常 3–10 秒，一天够抓几十到上百个）。
-所以换平台并不能省下浏览器用量，只能换一个宿主环境。
 
 | 平台 | 能不能跑 | 关键限制 |
 | --- | --- | --- |
 | **Vercel** Hobby | ✅ 推荐 | 函数最长 60 秒，包体积 250MB，最省事 |
 | **Render** 免费 | ✅ 可以 | 512MB 内存 / 0.1 CPU，**15 分钟无流量会休眠**，冷启动要约 30–60 秒 |
 | **Koyeb** 免费 | ✅ 可以 | 512MB 内存 / 0.1 vCPU，不休眠，同样用 Docker 部署 |
-| **Netlify** 免费 | ⚠️ 不推荐 | 同步函数响应体上限 **6MB**，下载带图片的 zip 很容易超；且要装 `@netlify/plugin-nextjs` |
-| **Cloudflare Pages / Workers** | ❌ 免费版不行 | CPU 上限 **10ms/请求**，而转换一个网页要几百毫秒到几秒；且没有真正的文件系统 |
-
-### 关于 Cloudflare：想统一到一家行不行？
-
-**免费版不行**，卡在两处：
-
-1. **CPU 上限 10ms/请求**。网页转 Markdown 要跑 JSDOM 解析 → Readability 提取 → Turndown 转换，
-   通常几百毫秒到几秒，远超 10ms，请求会被直接掐断。
-2. **没有真正的文件系统**。本项目要把 Markdown 和图片写进临时目录，再用 archiver 打 zip。
-   Workers 运行时没有 fs（新出的 `enable_nodejs_fs_module` 也只是受限的 `/tmp` 兼容层）。
-
-**如果愿意每月 $5 开 Workers 付费，Cloudflare 反而成了最优雅的方案**：
-
-- CPU 上限提到 30 秒/请求，转换够用了
-- 用 [Cloudflare Containers](https://developers.cloudflare.com/containers/)（2026 年 4 月已正式发布）
-  跑完整 Node.js 容器，**有真实文件系统**，现在这份代码几乎不用改就能跑
-- 容器按实际运行时间计费（每 10ms 计一次），闲置不花钱 —— 比 Render 免费版「休眠 + 冷启动」体验好得多
-- 于是浏览器抓取（Worker）和前端转换（Container）都在 Cloudflare 一家，不用跨平台
-
-折中做法：继续免费的话，就保持「Cloudflare Worker 抓网页 + Vercel/Render/Koyeb 跑前端」这种拆分，
-反正前端那边几乎不耗资源。
+| **Netlify** 免费 | ⚠️ 不推荐 | 同步函数响应体上限 **6MB**，下载带图片的 zip 很容易超 |
+| **Cloudflare Pages / Workers** | ❌ 免费版不行 | CPU 上限 **10ms/请求**，转换一个网页要几百毫秒到几秒；且没有真正的文件系统 |
 
 ### 部署到 Render（可选）
 
@@ -135,17 +96,14 @@ https://markdownworker.<你的子域>.workers.dev
 
 1. push 代码后，在 [render.com](https://render.com) → **New → Blueprint** → 选这个仓库
 2. Render 会自动读 `render.yaml`，实例类型选 **Free**
-3. 环境变量填 `HTMLFETCH_API`（Cloudflare Worker 地址）；`OPENAI_API_KEY` 可选
+3. 按需填 AI 相关的环境变量
 4. 等首次构建完成（Docker 构建比较慢，约 5–10 分钟）
 
 > 免费实例 15 分钟没访问就会休眠，下次打开要先等它启动，第一次点「转换」可能要等半分钟以上。
-> 想避免休眠，只能升级套餐或用定时任务每 10 分钟访问一次首页（不保证稳定）。
 
-### 想彻底不依赖 Cloudflare 的浏览器额度？
-
-可以在容器里自带 Chromium：把 `Dockerfile` 里那段 `apt-get install chromium` 的注释打开，
-并把 `PUPPETEER_EXECUTABLE_PATH` 指到 `/usr/bin/chromium`，然后**不要**配 `HTMLFETCH_API`，
-程序会自动改用本地 Puppeteer。注意 512MB 内存的免费实例跑 Chromium 会比较勉强，建议至少 1GB。
+如果要在容器里跑浏览器抓 SPA：把 `Dockerfile` 里 `apt-get install chromium` 那段注释打开，
+设 `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`，并把 `FETCH_MODE` 设成 `browser`。
+注意 512MB 内存的免费实例跑 Chromium 很勉强，建议至少 1GB。
 
 ## 💻 本地运行
 
@@ -154,11 +112,7 @@ npm install
 npm run dev
 ```
 
-本地默认会启动自带的 Puppeteer 实例（需要 Chromium）。如果安装时被跳过了，取消 `.npmrc` 里那行注释后重装即可；或者在 `.env.local` 里填 `HTMLFETCH_API` / `BROWSERLESS_KEY` 走远程抓取。
-
-## 🤖 关于 GPT 处理
-
-当前大模型不擅长原样返回整篇 Markdown，所以这里让模型只返回一组「替换操作」，再由程序把改动应用到原文上。GPT-3.5 效果尚可，GPT-4 更好。实现见 [src/pages/api/_gpt.js](./src/pages/api/_gpt.js)。
+本地配置写在 `.env.local`（不会进 git），可以直接照着 `.env.example` 抄一份改。
 
 ## 📄 License
 

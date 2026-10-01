@@ -9,63 +9,88 @@ import archiver from "archiver";
 export default async function handler(req, res) {
   // get params from body
   let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel } = req.body;
-  // let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent } = req.query;
-  if (!url) {
-    res.status(400).send("Missing url parameter");
+
+  if (!url || typeof url !== 'string') {
+    // 注意：必须 return，否则会拿着空 url 继续往下跑
+    return res.status(400).send("Missing url parameter");
   }
 
   if (!/^https?:\/\//i.test(url)) {
       url = 'http://' + url;
   }
-  
-  // normalize
-  // url = new URL(url).toString();
+
   console.log(`Fetching ${url}`);
   // random tmp folder in tmp directory
-  const folder = path.join(os.tmpdir(), Math.random().toString(36).substring(7));
-  // create dir if no exist
+  const folder = path.join(os.tmpdir(), `markdd-${Math.random().toString(36).substring(7)}`);
   try {
-    fs.mkdirSync(folder);
+    fs.mkdirSync(folder, { recursive: true });
+  } catch (e) {
+    console.log(e);
   }
-  catch(e){
-    console.log(e)
-  }
-  console.log("f", folder)
-  const md = await fetchCleanMarkdownFromUrl(url, `${folder}/index.md`, downloadImages === true, imagesDir || "images", imagesBasePathOverride, removeNonContent === true, applyGpt, bigModel === true);
-  if (downloadImages === true){
-    // Set the headers to indicate a file download
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', 'attachment; filename=markdd.zip');
 
-    // Create a zip archive using archiver
-    const archive = archiver('zip', {
-      zlib: { level: 9 } // Compression level
-    });
-
-     // Catch warnings and errors
-  archive.on('warning', (err) => {
-    if (err.code === 'ENOENT') {
-      console.warn(err);
-    } else {
-      throw err;
+  // 用完必须删掉临时目录，否则每次请求都会在 /tmp 里留一份，久了会撑爆磁盘
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    try {
+      fs.rmSync(folder, { recursive: true, force: true });
+    } catch (e) {
+      console.log('清理临时目录失败:', e.message);
     }
-  });
-  archive.on('error', (err) => {
-    throw err;
-  });
-    // Pipe the archive to the response
-    archive.pipe(res);
-    archive.directory(folder, false);
+  };
 
-    archive.finalize();
+  try {
+    const md = await fetchCleanMarkdownFromUrl(
+      url,
+      `${folder}/index.md`,
+      downloadImages === true,
+      imagesDir || "images",
+      imagesBasePathOverride,
+      removeNonContent === true,
+      applyGpt,
+      bigModel === true
+    );
 
-    // archive.on('end', () => res.end());
+    if (downloadImages === true){
+      // Set the headers to indicate a file download
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename=markdd.zip');
 
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Compression level
+      });
 
-  }
-  else{
-    res.setHeader("Content-Type", "text/plain");
-    res.send(md);
+      archive.on('warning', (err) => {
+        if (err.code === 'ENOENT') {
+          console.warn(err);
+        } else {
+          throw err;
+        }
+      });
+      archive.on('error', (err) => {
+        throw err;
+      });
+
+      // 等 zip 真正写完再删临时目录，否则包里会是空的
+      archive.on('end', cleanup);
+      res.on('close', cleanup);
+
+      archive.pipe(res);
+      archive.directory(folder, false);
+      archive.finalize();
+    }
+    else{
+      res.setHeader("Content-Type", "text/plain");
+      res.send(md);
+      cleanup();
+    }
+  } catch (error) {
+    console.error('转换失败:', error.message);
+    cleanup();
+    if (!res.headersSent){
+      res.status(500).send(error.message || 'Conversion failed');
+    }
   }
 }
 

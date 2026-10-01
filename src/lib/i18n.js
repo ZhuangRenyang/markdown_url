@@ -30,9 +30,9 @@ const zh = {
   downloadImagesHelp:
     "不使用远程图片链接，而是把图片下载到本地并在 Markdown 中引用。最终会得到一个包含 Markdown 文件和图片文件夹的 zip 压缩包。",
 
-  applyGpt: "用 GPT 处理 Markdown",
+  applyGpt: "用 AI 处理 Markdown",
   applyGptHelp:
-    "用自定义指令，通过 GPT-3.5 进一步清洗或改写 Markdown 内容（需要配置 OPENAI_API_KEY）。",
+    "用自定义指令让 AI 进一步清洗或改写 Markdown 内容，比如在开头加摘要、删除所有链接、改标题层级（需要配置 OPENAI_API_KEY）。",
 
   imageOptions: "图片选项",
   overrideImagesFolder: "自定义图片文件夹名称",
@@ -42,9 +42,9 @@ const zh = {
   overrideBasePathHelp:
     "覆盖 Markdown 中图片引用的路径前缀（仅在「下载图片」时生效）。",
 
-  gptOptions: "GPT 选项",
-  useGpt4: "使用 GPT-4（耗时更长）",
-  gptPlaceholder: `给 GPT 的指令，例如：
+  gptOptions: "AI 选项",
+  useGpt4: "使用更强的模型（更慢，可能产生额外费用）",
+  gptPlaceholder: `给 AI 的指令，例如：
 
 "在开头加一段内容摘要"
 "删除所有链接"
@@ -87,9 +87,9 @@ const en = {
   downloadImagesHelp:
     "Instead of linking to remote images, download them locally and link them in the markdown. Gives you a zip file with markdown and images folder.",
 
-  applyGpt: "Apply GPT Filter on Markdown",
+  applyGpt: "Process Markdown with AI",
   applyGptHelp:
-    "Apply custom instructions to further clean up or transform the markdown content using GPT-3.5 (requires OPENAI_API_KEY).",
+    "Use custom instructions to further clean up or transform the markdown with AI, e.g. add a summary, remove all links (requires OPENAI_API_KEY).",
 
   imageOptions: "Image Options",
   overrideImagesFolder: "Override Images Folder Name",
@@ -100,9 +100,9 @@ const en = {
   overrideBasePathHelp:
     "Override the base path for linked images in markdown (Only used when downloading images).",
 
-  gptOptions: "GPT Options",
-  useGpt4: "Use GPT4 (takes longer)",
-  gptPlaceholder: `Instructions for GPT like:
+  gptOptions: "AI Options",
+  useGpt4: "Use the stronger model (slower, may cost extra)",
+  gptPlaceholder: `Instructions for the AI, like:
 
 'Add a tldr section at the top'
 'Remove all links'
