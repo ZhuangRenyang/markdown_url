@@ -58,7 +58,8 @@ export async function processMarkdownWithImages(filePath, imgDirName, imagesBase
           // ignore local images
           return match;
         }
-        const imgName = `${sha1(url)}${path.extname(url)}`
+        const cleanUrl = url.split(/[?#]/)[0];
+        const imgName = `${sha1(url)}${path.extname(cleanUrl)}`
         const destImagePath = `${imagesDir}/${imgName}`;
         if (await checkFileExists(destImagePath)) {
           console.log(`Skipping: ${url} (already exists)`);

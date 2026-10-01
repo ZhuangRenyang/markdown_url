@@ -6,6 +6,33 @@ import os from "os";
 import fs from "fs";
 import archiver from "archiver";
 
+// 轻量 SSRF 防护：挡掉内网 / 保留地址与非常规协议。
+// 注：只校验 hostname 字面量，未做 DNS 解析后二次校验（防 DNS 重绑需要解析 + 比对 IP，
+// 在 Serverless 里成本较高），对个人自用已是足够的正向防御。
+function isBlockedUrl(target) {
+  let u;
+  try {
+    u = new URL(target);
+  } catch {
+    return true;
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return true;
+  const host = u.hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.localhost')) return true;
+  if (host.endsWith('.internal') || host.endsWith('.local')) return true;
+  if (host === 'metadata' || host === 'metadata.google.internal') return true;
+  if (/^\[?::1\]?$/.test(host) || host.startsWith('fe80')) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    const p = host.split('.').map(Number);
+    if (p[0] === 10 || p[0] === 127 || p[0] === 0) return true;
+    if (p[0] === 169 && p[1] === 254) return true;
+    if (p[0] === 172 && p[1] >= 16 && p[1] <= 31) return true;
+    if (p[0] === 192 && p[1] === 168) return true;
+    if (p[0] >= 224) return true;
+  }
+  return false;
+}
+
 export default async function handler(req, res) {
   // get params from body
   let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel } = req.body;
@@ -19,12 +46,22 @@ export default async function handler(req, res) {
       url = 'http://' + url;
   }
 
+  // SSRF 防护：挡掉内网 / 保留地址
+  if (isBlockedUrl(url)) {
+    return res.status(400).send("目标地址不被允许 / Target URL not allowed");
+  }
+
   // 用户在前端设置里填的凭据（每次请求随请求头带来，不落服务器）
   const aiConfig = {
     apiKey: req.headers["x-api-key"],
     baseURL: req.headers["x-base-url"],
     model: req.headers["x-model"],
   };
+
+  // SSRF 防护：AI 中转地址也不能指向内网
+  if (aiConfig.baseURL && isBlockedUrl(aiConfig.baseURL)) {
+    return res.status(400).send("Base URL 不被允许 / Base URL not allowed");
+  }
 
   console.log(`Fetching ${url}`);
   // random tmp folder in tmp directory

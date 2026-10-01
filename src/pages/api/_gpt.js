@@ -80,11 +80,23 @@ export async function runGPT(model, markdown, instructions, aiConfig = {}) {
       throw new Error("返回里没有 changeList 数组 / No changeList in response");
     }
     let output = markdown;
+    let notMatched = 0;
     changeList.forEach((change) => {
       if (!change || !change.originalText) return;
-      output = output.replace(change.originalText, change.changedTo ?? "");
+      // changedTo 为空 / null / undefined 时跳过，绝不用空串替换（否则会误删正文）
+      if (change.changedTo == null || change.changedTo === "") return;
+      // originalText 不在正文里（模型幻觉或对不上）：跳过并计数
+      if (!output.includes(change.originalText)) {
+        notMatched++;
+        return;
+      }
+      // 用 split/join 做全局替换（String.replace 用字符串参数只会改第一处）
+      output = output.split(change.originalText).join(change.changedTo);
     });
-    return { content: output, changes: changeList };
+    if (notMatched) {
+      console.log(`[ai] ${notMatched} 处 originalText 未在正文中命中，已跳过（可能模型幻觉）`);
+    }
+    return { content: output, changes: changeList, notMatched };
   } catch (error) {
     console.error("解析模型输出失败:", error.message);
     throw new Error(`AI 处理失败 / AI processing failed: ${error.message}`);
