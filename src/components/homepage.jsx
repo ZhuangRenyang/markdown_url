@@ -38,6 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
  import { track } from "./analytics"
+import { LanguageSwitch, useLanguage } from "./language-provider"
 import { useEffect, useState } from "react"
 import {
   Card,
@@ -63,7 +64,7 @@ function HelpTooltip({children}){
     <TooltipProvider delayDuration={10}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button className="ml-2" variant="ghost" size="ghost" ><Badge variant="outline">?</Badge></Button>
+          <Button className="ml-2" variant="ghost" size="ghost"><Badge variant="outline">?</Badge></Button>
         </TooltipTrigger>
         <TooltipContent>
           <p>{children}</p>
@@ -74,6 +75,7 @@ function HelpTooltip({children}){
 }
 export function Homepage() {
   const { toast } = useToast()
+  const { t } = useLanguage()
   const [url, setUrl] = useState("");
   const [imagesDir, setImagesDir] = useState("images");
   const [downloadImages, setDownloadImages] = useState(false);
@@ -121,8 +123,8 @@ export function Homepage() {
     }
     if (!url){
       return toast({
-        title: "Invalid URL",
-        description: "Please enter a valid URL",
+        title: t("invalidUrlTitle"),
+        description: t("invalidUrlDesc"),
       })
     }
     // const fullUrl = `/api/tomd?url=${url}&downloadImages=${downloadImages}&imagesDir=${imagesDir}&imagesBasePathOverride=${imagesBasePathOverride}&removeNonContent=${removeNonContent}`
@@ -149,16 +151,16 @@ export function Homepage() {
     // const resp = await fetch(fullUrl)
     if (!resp.ok){
       toast({
-        title: "Failed to Convert",
-        description: "Either the URL is invalid or the server is too busy. Please try again later.",
+        title: t("failedTitle"),
+        description: t("failedDesc"),
       })
       track("Download Failed", payload)
     }
     if (resp.ok && !downloadImages){
       const md = await resp.text();
       toast({
-        title: "Converted Successfully",
-        description: "Your markdown is being downloaded as a text file.",
+        title: t("successTitle"),
+        description: t("successDesc"),
       })
       const a = document.createElement('a');
       a.href = `data:text/plain;charset=utf-8,${encodeURIComponent(md)}`;
@@ -171,16 +173,16 @@ export function Homepage() {
     } 
     else if (resp.ok && downloadImages){
       const blob = await resp.blob();
-      const url = window.URL.createObjectURL(blob);
+      const objectUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = objectUrl;
       a.download = `${getLastPartOfUrl(url)}.zip` || "markdd.zip";
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(objectUrl);
       toast({
-        title: "Download Started",
-        description: "Your markdown and images are being downloaded as a zip file",
+        title: t("downloadStartedTitle"),
+        description: t("downloadStartedDesc"),
       })
       track("Downloaded Markdown", {withImages: true})
     }
@@ -188,50 +190,50 @@ export function Homepage() {
     setIsLoading(false)
   }
   return (
-    (<main className="w-full min-h-[100vh] py-6 space-y-6 flex justify-center items-center">
+    (<main className="w-full min-h-[100vh] py-6 space-y-6 flex justify-center items-center relative">
       <Toaster />
+      <LanguageSwitch />
       <div className="container flex flex-col items-center justify-center">
         <div className="space-y-2 text-center mb-10">
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">📥<br/>Markdown<b>Down</b></h1>
           <p
             className="max-w-[600px] text-gray-500 md:text-xl/relaxed dark:text-gray-400">
-            Convert any webpage to a clean markdown<br/> w/ images downloaded.
+            {t("subtitle")}<br/> {t("subtitle2")}
           </p>
         </div>
         <div className="w-full max-w-sm space-y-2">
           <div className="flex w-full max-w-sm items-center space-x-2 mb-10">
-            <Input value={url} type="text" placeholder="URL" onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
+            <Input value={url} type="text" placeholder={t("urlPlaceholder")} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
               if (e.key === "Enter"){
                 submit()
               }
             }} />
             <Button disabled={isLoading} type="submit" onClick={submit}>
-              {isLoading ? "Converting..." : "Convert"}
+              {isLoading ? t("converting") : t("convert")}
             </Button>
           </div>
           
           <div className="space-y-2 flex flex-col gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>Options</CardTitle>
+                <CardTitle>{t("options")}</CardTitle>
               </CardHeader>
               <CardContent>
               <div className="flex items-center space-x-2">
               <Checkbox id="remove-noncontent" checked={removeNonContent} onClick={t=>setRemoveNonContent(!removeNonContent)} />
               <label className="text-sm leading-none" htmlFor="remove-noncontent">
-                Remove non-content elements 
+                {t("removeNonContent")}
                 <HelpTooltip>
-                  Removes non-content elements like headers, footers, ads etc.
+                  {t("removeNonContentHelp")}
                 </HelpTooltip>
               </label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox id="remove-images" checked={downloadImages} onClick={t=>setDownloadImages(!downloadImages)} />
               <label className="text-sm leading-none" htmlFor="remove-images">
-                Download images locally and link them
+                {t("downloadImages")}
                 <HelpTooltip>
-                  Instead of linking to remote images, download them locally and link them in the markdown.<br/>
-                  Gives you a zip file with markdown and images folder.
+                  {t("downloadImagesHelp")}
                 </HelpTooltip>
               </label>
             </div>
@@ -244,9 +246,9 @@ export function Homepage() {
               setGptEnabled(newValue);
               }} />
               <Label className="text-sm leading-none ml-2" htmlFor="apply-gpt">
-                Apply GPT Filter on Markdown
+                {t("applyGpt")}
                 <HelpTooltip>
-                  Apply custom instructions to further clean up or transform the markdown content using GPT-3.5
+                  {t("applyGptHelp")}
                 </HelpTooltip>
               </Label>
             </div>
@@ -256,27 +258,27 @@ export function Homepage() {
             {downloadImages && (
               <Card>
               <CardHeader>
-                <CardTitle>Image Options</CardTitle>
+                <CardTitle>{t("imageOptions")}</CardTitle>
               </CardHeader>
               <CardContent>
               <>
               <div className="space-y-2">
               <Label className="text-sm leading-none" htmlFor="images-folder">
-                Override Images Folder Name
+                {t("overrideImagesFolder")}
                 <HelpTooltip>
-                  Override the default folder name for images (Only used when downloading images)
+                  {t("overrideImagesFolderHelp")}
                 </HelpTooltip>
               </Label>
-              <Input id="images-folder" placeholder="Enter folder name" type="text" value={imagesDir} onChange={val=>{
+              <Input id="images-folder" placeholder={t("enterFolderName")} type="text" value={imagesDir} onChange={val=>{
                 setImagesDir(val.target.value)
               }} />
               
             </div>
             <div className="space-y-2">
               <Label className="text-sm leading-none" htmlFor="images-basepath">
-                Override base path for images in markdown
+                {t("overrideBasePath")}
                 <HelpTooltip>
-                  Override the base path for linked images in markdown (Only used when downloading images)
+                  {t("overrideBasePathHelp")}
                 </HelpTooltip>
               </Label>
               <Input id="images-basepath" placeholder={`./${imagesDir}`} type="text" value={imagesBasePathOverride} onChange={val=>{
@@ -289,7 +291,7 @@ export function Homepage() {
             )}
  {gptEnabled && <Card>
               <CardHeader>
-                <CardTitle>GPT Options</CardTitle>
+                <CardTitle>{t("gptOptions")}</CardTitle>
               </CardHeader>
               <CardContent>
             <div className="space-y-2">
@@ -298,12 +300,12 @@ export function Homepage() {
                 <div className="flex items-center space-x-2">
                 <Checkbox id="big-model" checked={bigModel} onClick={t=>setBigModel(!bigModel)} />
                 <label className="text-sm leading-none" htmlFor="big-model">
-                  Use GPT4 (takes longer)
+                  {t("useGpt4")}
                 </label>
               </div>
               <Textarea id="apply-gpt-txt" 
               className="min-h-[20rem]"
-              placeholder={`Instructions for GPT like:\n\n'Add a tldr section at the top'\n'Remove all links'\n'Change all subheadings to h3'`} value={applyGpt} onChange={val=>{ 
+              placeholder={t("gptPlaceholder")} value={applyGpt} onChange={val=>{ 
                 setApplyGpt(val.target.value)
               }} />
             </div>

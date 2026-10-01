@@ -69,9 +69,9 @@ export default async function handler(req, res) {
   }
 }
 
-// This function can run for a maximum of 30 seconds
+// Vercel 免费版(Hobby)上限 60 秒，Pro/Enterprise 可改到 300 秒
 export const config = {
-  maxDuration: 30,
+  maxDuration: 60,
   api: {
     bodyParser: {
       sizeLimit: '1mb',

@@ -6,12 +6,26 @@ import { processMarkdownWithImages } from './_imgProcessor';
 import fs from 'fs';
 import { runGPT } from './_gpt';
 import Showdown from 'showdown';
-import puppeteer from 'puppeteer';
 import { wrapInStyledHtml } from './_htmlwrap';
 const gptModel = 'gpt-3.5-turbo-0125';
 const gptModelBig = 'gpt-4-turbo-2024-04-09'
 const browserFetchUrl = process.env.HTMLFETCH_API?`${process.env.HTMLFETCH_API}/?url=`:undefined;
 const browserWSEndpoint = process.env.BROWSERLESS_KEY? `https://chrome.browserless.io?token=${process.env.BROWSERLESS_KEY}`:undefined;
+
+// Puppeteer 只在本地回退方案里才需要。Vercel 部署时通过 HTMLFETCH_API(Cloudflare Worker)
+// 或 BROWSERLESS_KEY 抓取网页，因此这里改成按需加载，避免把 Chromium 打进函数包。
+async function loadPuppeteer(){
+  try {
+    const mod = await import('puppeteer');
+    return mod.default || mod;
+  } catch (e) {
+    throw new Error(
+      'Puppeteer 不可用 / Puppeteer is not available. ' +
+      '请在环境变量中配置 HTMLFETCH_API（Cloudflare Worker 地址）或 BROWSERLESS_KEY，' +
+      '否则只能在本地安装 puppeteer 后使用。Original error: ' + e.message
+    );
+  }
+}
 
 // Define the function using ES6 arrow function syntax
 let browser;
@@ -30,6 +44,7 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
     else{
       console.log('Launching Puppeteer browser instance...');
       if (!browser){
+        const puppeteer = await loadPuppeteer();
         if (browserWSEndpoint){
           browser = await puppeteer.connect({browserWSEndpoint});
         }

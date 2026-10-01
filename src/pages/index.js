@@ -1,21 +1,26 @@
 import { Homepage } from "@/components/homepage";
 import Head from 'next/head'
 
+// 部署到 Vercel 后，可在环境变量里设置 NEXT_PUBLIC_SITE_URL 为自己的域名，
+// 例如 https://markdown-url.vercel.app（不要带结尾斜杠）
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://markdowndown.vercel.app').replace(/\/$/, '');
+
 const metadata = {
-  title: 'MarkdownDown',
+  title: 'MarkdownDown · 网页转 Markdown',
+  description: '把任意网页转成干净的 Markdown，图片可一并打包下载。',
   openGraph: {
-    title: 'MarkdownDown',
-    description: 'Convert any webpage to a clean markdown w/ images downloaded.',
-    url: 'https://markdowndown.vercel.app/',
+    title: 'MarkdownDown · 网页转 Markdown',
+    description: '把任意网页转成干净的 Markdown，图片可一并打包下载。',
+    url: siteUrl,
     siteName: 'MarkdownDown',
     images: [
       {
-        url: 'https://markdowndown.vercel.app/og.png', // Must be an absolute URL
+        url: `${siteUrl}/og.png`, // Must be an absolute URL
         width: 1200,
         height: 630,
       }
     ],
-    locale: 'en_US',
+    locale: 'zh_CN',
     type: 'website',
   },
 }
@@ -25,6 +30,7 @@ export default function Home() {
     <Head>
       <title>{metadata.title}</title>
       <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="description" content={metadata.description} />
       <meta property="og:title" content={metadata.openGraph.title} />
       <meta property="og:description" content={metadata.openGraph.description} />
       <meta property="og:url" content={metadata.openGraph.url} />
