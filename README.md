@@ -26,7 +26,11 @@
 Vercel 的 Serverless Function 有 250MB 体积上限，装不下 Puppeteer 自带的 Chromium。
 所以**网页抓取交给免费的 Cloudflare Worker**，Next.js 只负责转换和打包。
 
-### 第一步：部署 Cloudflare Worker（抓网页用）
+### 第一步（可选）：部署 Cloudflare Worker 抓网页
+
+> 现在只有**确实需要 JS 渲染**的网页（SPA、React/Vue 单页应用）才用得上浏览器。
+> 大多数博客、文档、新闻站用普通 HTTP 请求就能拿到正文，所以这一步可以跳过。
+> 详见下面「抓取模式」。
 
 ```bash
 cd cfworker
@@ -52,18 +56,43 @@ https://markdownworker.<你的子域>.workers.dev
 
 | 变量名 | 是否必填 | 说明 |
 | --- | --- | --- |
-| `HTMLFETCH_API` | ✅ 必填 | 上一步拿到的 Cloudflare Worker 地址 |
+| `FETCH_MODE` | 可选 | 抓取模式，默认 `auto`。详见下面「抓取模式」 |
+| `HTMLFETCH_API` | 可选 | Cloudflare Worker 地址，只在需要 JS 渲染时兜底 |
 | `OPENAI_API_KEY` | 可选 | 要用「GPT 处理」才需要 |
 | `BROWSERLESS_KEY` | 可选 | 不想用 Cloudflare 时，改用 browserless.io 远程浏览器 |
 | `NEXT_PUBLIC_SITE_URL` | 可选 | 你的 Vercel 域名，用于生成分享卡片链接 |
 
 5. 填完环境变量后点 **Redeploy**（环境变量改动需要重新部署才生效）
 
+### 抓取模式：能不能不用 Cloudflare Worker？
+
+能。通过 `FETCH_MODE` 控制，三种模式：
+
+| 模式 | 行为 | 什么时候用 |
+| --- | --- | --- |
+| `auto`（默认） | **先发普通 HTTP 请求**；如果抓到的正文少于 200 字符（说明是 JS 渲染的空壳），才回退到浏览器 | 推荐。省浏览器额度，又不会漏掉 SPA |
+| `plain` | 只用普通 HTTP 请求，**完全不启动浏览器** | 完全不想碰 Cloudflare / 只想抓博客文档站 |
+| `browser` | 只用浏览器渲染抓取（原来的行为） | 主要抓 SPA，或普通请求老是被拒绝时 |
+
+实测（普通请求，不需要浏览器）：
+
+| 网页 | 结果 |
+| --- | --- |
+| 阮一峰的博客文章 | 抓到 12513 字符正文 ✅ |
+| React 官方文档 | 抓到 17436 字符正文 ✅ |
+
+**也就是说：`FETCH_MODE=plain` 时，你一个 Cloudflare Worker 都不用部署。**
+代价是纯 JS 渲染的站点（页面源码里几乎是空的）抓不到正文，以及部分懒加载的图片会漏掉。
+想省事就留着 `auto`——普通请求能搞定的绝不碰浏览器，搞不定的才消耗额度。
+
+另外两个可选环境变量：`MIN_MARKDOWN_LENGTH`（回退阈值，默认 200）、`FETCH_TIMEOUT_MS`（请求超时，默认 15000）。
+
 ### 关于 Puppeteer
 
 - 仓库里已放 `.npmrc`（`puppeteer_skip_download=true`），Vercel 安装依赖时**不会下载 Chromium**
 - `next.config.mjs` 里也排除了 puppeteer 相关文件，不会打进函数包
-- 线上若既没配 `HTMLFETCH_API` 也没配 `BROWSERLESS_KEY`，转换会直接报「Puppeteer 不可用」
+- 只有在 `browser` 模式、或 `auto` 模式回退时才会用到浏览器后端；
+  如果此时既没配 `HTMLFETCH_API` 也没配 `BROWSERLESS_KEY`，会报「浏览器不可用」
 
 ## 🧭 想换别的免费平台？
 
