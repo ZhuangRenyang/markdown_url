@@ -14,6 +14,8 @@ const gptModelBig = process.env.OPENAI_MODEL_BIG || process.env.OPENAI_MODEL || 
 
 // 抓取策略：只用普通 HTTP 请求，不启动任何浏览器（最简单、零额外依赖）
 const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || 15000);
+// 抓到的正文少于这个字符数，认为「可能是 JS 渲染的空壳」，给明确提示而不是返回空结果
+const MIN_CONTENT_LENGTH = Number(process.env.MIN_CONTENT_LENGTH || 200);
 
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
@@ -120,6 +122,14 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
       throw new Error(
         `抓取失败：${e.message}。` +
         '该网页可能需要 JS 渲染或拒绝了请求。'
+      );
+    }
+
+    if (markdown.trim().length < MIN_CONTENT_LENGTH){
+      throw new Error(
+        '抓取到的正文太少（不足 ' + MIN_CONTENT_LENGTH + ' 字）。' +
+        '该站点很可能是纯 JS 渲染（SPA），初始 HTML 里没有正文，普通 HTTP 请求拿不到。' +
+        '建议：①换贴该站的 AMP 版 / RSS / 原文链接；②若是你自己的站点，确认服务端有预渲染。'
       );
     }
 
