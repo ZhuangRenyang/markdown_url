@@ -34,15 +34,6 @@ const zh = {
   applyGptHelp:
     "用自定义指令让 AI 进一步清洗或改写 Markdown 内容，比如在开头加摘要、删除所有链接、改标题层级（需要配置 OPENAI_API_KEY）。",
 
-  // 高级选项：反爬站点（如 CSDN）需要登录态才能抓取
-  advancedOptions: "高级选项",
-  advancedOptionsHelp:
-    "用于需要登录态的站点（如 CSDN）。登录后复制 Cookie 粘贴此处，即可绕过反爬验证页。",
-  cookieLabel: "自定义请求头 / Cookie",
-  cookiePlaceholder: "粘贴 Cookie，例如 uuid_tt_dd=...; token=...",
-  cookieHelp:
-    "仅本次请求使用，不会保存到服务器。Cookie 含登录凭证，请勿在公开设备填写。",
-
   // 粘贴网页内容模式：手机没有书签栏时的替代方案
   pasteMode: "粘贴网页内容模式",
   pasteModeHelp:
@@ -62,31 +53,6 @@ const zh = {
     "该页面是 JS 动态渲染的，服务端拿不到正文。请在浏览器打开该文章 → 复制正文（或保存网页为 .html）→ 回本页粘贴/上传后点转换。",
   pasteEmptyTitle: "请先粘贴内容",
   pasteEmptyDesc: "把文章页复制的内容粘贴到上面的文本框再点转换。",
-
-  // 书签工具：在已登录文章页点一下即可转换，无需 cookie / 环境变量
-  bookmarkletTitle: "书签工具",
-  bookmarkletHelp:
-    "在已登录的文章页点一下书签即可转换，彻底免去复制 Cookie 和配置环境变量。适合 CSDN、知乎等反爬站点。",
-  bookmarkletDesc:
-    "把下面的书签拖到浏览器收藏栏（手机可长按链接→添加书签）。使用时：在本页粘贴文章链接 → 点书签，会自动打开文章并完成转换，Markdown 在新标签页弹出，可直接复制/下载。",
-  bookmarkletDrag: "拖我到收藏栏 / 点我转换",
-  bookmarkletDragHint: "把此链接拖到书签栏；或右键收藏。以后在文章页点它即可转换。",
-  bookmarkletCopyBtn: "复制书签代码",
-  bookmarkletCopied: "已复制书签代码",
-  bookmarkletCopyFail: "复制失败，请手动复制上方链接。",
-  bookmarkletUsage:
-    "用法（全自动，点一次即可）：①把「🔖」拖进收藏栏（手机长按链接→添加书签）；②在输入框粘贴文章链接；③点书签——自动打开文章并转换，新标签页里可复制或下载 Markdown。（若已打开文章，直接点书签也能转。）",
-
-  // Cookie 保险箱 / 恢复链接：填一次，手机免粘贴
-  generateRestoreBtn: "生成恢复链接",
-  generating: "生成中...",
-  restoreReady: "已就绪",
-  restoreLinkTitle: "恢复链接已生成并复制",
-  restoreLinkDesc: "把链接发到手机，用手机打开即可自动配置，之后转换免粘贴 Cookie。",
-  restoreLinkHint: "把下面链接发到手机打开（已自动复制）：",
-  restoreGenFail: "生成失败，请重试。",
-  invalidCookieTitle: "请先填写 Cookie",
-  invalidCookieDesc: "要生成恢复链接，请先在上方粘贴 CSDN 的 Cookie。",
 
   imageOptions: "图片选项",
   overrideImagesFolder: "自定义图片文件夹名称",
@@ -180,15 +146,6 @@ const en = {
   applyGptHelp:
     "Use custom instructions to further clean up or transform the markdown with AI, e.g. add a summary, remove all links (requires OPENAI_API_KEY).",
 
-  // Advanced options: anti-bot sites (e.g. CSDN) need login state to fetch
-  advancedOptions: "Advanced",
-  advancedOptionsHelp:
-    "For sites that require login (e.g. CSDN). Paste the Cookie after logging in to bypass the anti-bot verification page.",
-  cookieLabel: "Custom headers / Cookie",
-  cookiePlaceholder: "Paste cookie, e.g. uuid_tt_dd=...; token=...",
-  cookieHelp:
-    "Used only for this request, never stored on the server. Contains login credentials — don't enter on shared devices.",
-
   // Paste mode: fallback when mobile browser has no bookmarks bar
   pasteMode: "Paste page content mode",
   pasteModeHelp:
@@ -208,32 +165,6 @@ const en = {
     "This page is JS-rendered, so the server can't get the content. Open the article in your browser → copy the body (or save the page as .html) → come back and paste/upload it to convert.",
   pasteEmptyTitle: "Nothing pasted yet",
   pasteEmptyDesc: "Paste the content you copied from the article page, then click Convert.",
-
-  // Bookmarklet: one click on any logged-in article page, no cookie / no env vars
-  bookmarkletTitle: "Bookmarklet",
-  bookmarkletHelp:
-    "One click on any logged-in article page converts it — no cookie copy, no env vars. Great for anti-bot sites like CSDN or Zhihu.",
-  bookmarkletDesc:
-    "Drag the bookmarklet to your bookmarks bar (on mobile, long-press it to add). To use: paste the article URL here, then click the bookmark — it opens the article and converts automatically, showing Markdown in a new tab you can copy or download.",
-  bookmarkletDrag: "Drag me to bookmarks / Click to convert",
-  bookmarkletDragHint: "Drag this link to your bookmarks bar, or right-click to bookmark. Click it on any article page to convert.",
-  bookmarkletCopyBtn: "Copy bookmarklet",
-  bookmarkletCopied: "Bookmarklet copied",
-  bookmarkletCopyFail: "Copy failed, please copy the link above manually.",
-  bookmarkletUsage:
-    "How (fully automatic, one click): ① drag the 🔖 into your bookmarks bar (long-press on mobile); ② paste the article URL; ③ click the bookmark — it opens the article and converts automatically; copy or download the Markdown in the new tab. (You can also just click it while already on an article page.)",
-
-  // Cookie vault / restore link: set once, no paste on phone
-  generateRestoreBtn: "Generate restore link",
-  generating: "Generating...",
-  restoreReady: "Ready",
-  restoreLinkTitle: "Restore link generated & copied",
-  restoreLinkDesc:
-    "Send the link to your phone, open it there to auto-configure. No more pasting cookie on mobile.",
-  restoreLinkHint: "Send this link to your phone (already copied):",
-  restoreGenFail: "Generation failed, please retry.",
-  invalidCookieTitle: "Cookie required first",
-  invalidCookieDesc: "To generate a restore link, paste the CSDN cookie above first.",
 
   imageOptions: "Image Options",
   overrideImagesFolder: "Override Images Folder Name",
