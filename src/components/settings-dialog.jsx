@@ -120,12 +120,12 @@ export function SettingsDialog({ open, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6 sm:p-3"
       onClick={onClose}>
       <div
-        className="flex max-h-[88vh] w-full max-w-sm flex-col rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+        className="flex max-h-[80vh] w-full max-w-[320px] flex-col rounded-lg border border-gray-200 bg-white shadow-lg sm:max-h-[88vh] sm:max-w-sm sm:rounded-xl dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+        <div className="flex items-start justify-between border-b border-gray-100 px-3 py-2.5 dark:border-gray-800 sm:px-4 sm:py-3">
           <div>
             <h2 className="text-sm font-semibold">{t("settingsTitle")}</h2>
             <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
@@ -140,7 +140,7 @@ export function SettingsDialog({ open, onClose }) {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto sm:space-y-3 px-3 py-2.5 sm:px-4 sm:py-3">
           <div>
             <Label className="mb-1.5 block text-xs font-medium">{t("apiSite")}</Label>
             <div className="flex flex-wrap gap-1.5">
@@ -150,7 +150,7 @@ export function SettingsDialog({ open, onClose }) {
                   type="button"
                   onClick={() => pickPreset(p)}
                   className={
-                    "rounded-md px-2.5 py-1 text-xs transition-colors " +
+                    "rounded-md px-2 py-0.5 text-[11px] transition-colors sm:px-2.5 sm:py-1 sm:text-xs " +
                     (preset === p.id
                       ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
@@ -207,7 +207,7 @@ export function SettingsDialog({ open, onClose }) {
             />
           </div>
 
-          <p className="rounded-md bg-orange-50 px-2.5 py-1.5 text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+          <p className="rounded-md bg-orange-50 px-2 py-1 text-[10.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
             ⚠ {t("keyWarning")}
           </p>
 
@@ -246,7 +246,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           {/* ===== 网页抓取服务：反爬 / SPA 站点用它来抓正文 ===== */}
-          <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
+          <div className="border-t border-gray-200 pt-2.5 dark:border-gray-700 sm:pt-3">
             <h3 className="text-xs font-semibold">{t("fetchServiceTitle")}</h3>
             <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
               {t("fetchServiceDesc")}
@@ -262,7 +262,7 @@ export function SettingsDialog({ open, onClose }) {
                   type="button"
                   onClick={() => setFetchProvider(p.id)}
                   className={
-                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors " +
+                    "flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] transition-colors sm:px-2.5 sm:py-1 sm:text-xs " +
                     (fetchProvider === p.id
                       ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
@@ -270,7 +270,7 @@ export function SettingsDialog({ open, onClose }) {
                   <span>{lang === "zh" ? p.labelZh : p.labelEn}</span>
                   <span
                     className={
-                      "rounded px-1 py-0.5 text-[10px] leading-none " +
+                      "rounded px-1 py-0.5 text-[9px] leading-none sm:text-[10px] " +
                       (p.free
                         ? fetchProvider === p.id
                           ? "bg-white/25 text-white"
@@ -287,7 +287,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           {fetchProvider === "auto" && (
-            <p className="rounded-md bg-green-50 px-2.5 py-1.5 text-[11px] text-green-700 dark:bg-green-950/40 dark:text-green-300">
+            <p className="rounded-md bg-green-50 px-2 py-1 text-[10.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-green-700 dark:bg-green-950/40 dark:text-green-300">
               ✓ {t("fetchAutoHelp")}
             </p>
           )}
@@ -325,7 +325,7 @@ export function SettingsDialog({ open, onClose }) {
             activeFetchPreset.keyField &&
             !fetchKeys[activeFetchPreset.keyField] &&
             !activeFetchPreset.free && (
-              <p className="rounded-md bg-orange-50 px-2.5 py-1.5 text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+              <p className="rounded-md bg-orange-50 px-2 py-1 text-[10.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
                 ⚠ {t("fetchNeedKey")}
               </p>
             )}
