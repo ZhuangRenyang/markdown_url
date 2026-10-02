@@ -120,15 +120,15 @@ export function SettingsDialog({ open, onClose }) {
 
   return (
     <div
-      className="safe-bottom fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-6"
+      className="safe-bottom fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6"
       onClick={onClose}>
       <div
-        className="safe-bottom flex max-h-[90vh] w-full max-w-[calc(100vw-1.5rem)] flex-col rounded-lg border border-gray-200 bg-white shadow-lg sm:max-h-[86vh] sm:max-w-md sm:rounded-xl dark:border-gray-700 dark:bg-gray-900"
+        className="safe-bottom flex max-h-[72vh] w-full max-w-[22rem] flex-col rounded-xl border border-gray-200 bg-white shadow-lg sm:max-h-[86vh] sm:max-w-lg sm:rounded-2xl lg:max-w-xl dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-5 sm:py-4">
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-6 sm:py-4">
           <div>
             <h2 className="text-sm font-semibold">{t("settingsTitle")}</h2>
-            <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+            <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400 sm:text-xs">
               {t("settingsSubtitle")}
             </p>
           </div>
@@ -140,9 +140,9 @@ export function SettingsDialog({ open, onClose }) {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 sm:space-y-3.5 sm:px-5 sm:py-4">
+        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-3 sm:space-y-4 sm:px-6 sm:py-5">
           <div>
-            <Label className="mb-1.5 block text-[13px] font-medium sm:text-xs">{t("apiSite")}</Label>
+            <Label className="mb-1.5 block text-[13px] font-medium sm:text-sm">{t("apiSite")}</Label>
             <div className="flex flex-wrap gap-1.5">
               {PRESETS.map((p) => (
                 <button
@@ -162,7 +162,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1 block text-[13px] font-medium sm:text-xs" htmlFor="cfg-baseurl">
+            <Label className="mb-1 block text-[13px] font-medium sm:text-sm" htmlFor="cfg-baseurl">
               {t("baseUrl")}
             </Label>
             <Input
@@ -175,7 +175,7 @@ export function SettingsDialog({ open, onClose }) {
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <Label className="text-[13px] font-medium sm:text-xs" htmlFor="cfg-apikey">
+              <Label className="text-[13px] font-medium sm:text-sm" htmlFor="cfg-apikey">
                 {t("apiKey")}
               </Label>
               <button
@@ -196,7 +196,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1 block text-[13px] font-medium sm:text-xs" htmlFor="cfg-model">
+            <Label className="mb-1 block text-[13px] font-medium sm:text-sm" htmlFor="cfg-model">
               {t("model")}
             </Label>
             <Input
@@ -254,7 +254,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-[13px] font-medium sm:text-xs">{t("fetchProvider")}</Label>
+            <Label className="mb-1.5 block text-[13px] font-medium sm:text-sm">{t("fetchProvider")}</Label>
             <div className="flex flex-wrap gap-2">
               {FETCH_PROVIDERS.map((p) => (
                 <button
@@ -295,7 +295,7 @@ export function SettingsDialog({ open, onClose }) {
           {activeFetchPreset.keyField ? (
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <Label className="text-[13px] font-medium sm:text-xs" htmlFor="cfg-fetchkey">
+                <Label className="text-[13px] font-medium sm:text-sm" htmlFor="cfg-fetchkey">
                   {activeFetchPreset.labelZh} {t("apiKey")}
                 </Label>
                 <button
