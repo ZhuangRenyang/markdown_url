@@ -43,6 +43,17 @@ const zh = {
   cookieHelp:
     "仅本次请求使用，不会保存到服务器。Cookie 含登录凭证，请勿在公开设备填写。",
 
+  // Cookie 保险箱 / 恢复链接：填一次，手机免粘贴
+  generateRestoreBtn: "生成恢复链接",
+  generating: "生成中...",
+  restoreReady: "已就绪",
+  restoreLinkTitle: "恢复链接已生成并复制",
+  restoreLinkDesc: "把链接发到手机，用手机打开即可自动配置，之后转换免粘贴 Cookie。",
+  restoreLinkHint: "把下面链接发到手机打开（已自动复制）：",
+  restoreGenFail: "生成失败，请重试。",
+  invalidCookieTitle: "请先填写 Cookie",
+  invalidCookieDesc: "要生成恢复链接，请先在上方粘贴 CSDN 的 Cookie。",
+
   imageOptions: "图片选项",
   overrideImagesFolder: "自定义图片文件夹名称",
   overrideImagesFolderHelp: "覆盖默认的图片文件夹名称（仅在「下载图片」时生效）。",
@@ -135,6 +146,18 @@ const en = {
   cookiePlaceholder: "Paste cookie, e.g. uuid_tt_dd=...; token=...",
   cookieHelp:
     "Used only for this request, never stored on the server. Contains login credentials — don't enter on shared devices.",
+
+  // Cookie vault / restore link: set once, no paste on phone
+  generateRestoreBtn: "Generate restore link",
+  generating: "Generating...",
+  restoreReady: "Ready",
+  restoreLinkTitle: "Restore link generated & copied",
+  restoreLinkDesc:
+    "Send the link to your phone, open it there to auto-configure. No more pasting cookie on mobile.",
+  restoreLinkHint: "Send this link to your phone (already copied):",
+  restoreGenFail: "Generation failed, please retry.",
+  invalidCookieTitle: "Cookie required first",
+  invalidCookieDesc: "To generate a restore link, paste the CSDN cookie above first.",
 
   imageOptions: "Image Options",
   overrideImagesFolder: "Override Images Folder Name",

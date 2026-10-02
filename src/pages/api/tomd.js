@@ -5,6 +5,7 @@ import path from "path";
 import os from "os";
 import fs from "fs";
 import archiver from "archiver";
+import { decryptCookie } from "@/lib/cookieVault";
 
 // 轻量 SSRF 防护：挡掉内网 / 保留地址与非常规协议。
 // 注：只校验 hostname 字面量，未做 DNS 解析后二次校验（防 DNS 重绑需要解析 + 比对 IP，
@@ -52,7 +53,7 @@ function buildCustomHeaders(cookie, customHeaders) {
 
 export default async function handler(req, res) {
   // get params from body
-  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel, cookie, customHeaders } = req.body;
+  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel, cookie, customHeaders, restoreToken } = req.body;
 
   if (!url || typeof url !== 'string') {
     // 注意：必须 return，否则会拿着空 url 继续往下跑
@@ -80,7 +81,14 @@ export default async function handler(req, res) {
     return res.status(400).send("Base URL 不被允许 / Base URL not allowed");
   }
 
-  // 反爬站点（如 CSDN）需要登录态：把 Cookie / 自定义请求头透传给抓取请求
+  // 反爬站点（如 CSDN）需要登录态：优先用明文 cookie；否则尝试用「恢复链接」token 解密复用
+  if ((!cookie || !cookie.trim()) && restoreToken) {
+    try {
+      cookie = decryptCookie(restoreToken);
+    } catch (e) {
+      return res.status(400).send("恢复凭据无效 / Invalid restore token");
+    }
+  }
   const headersForFetch = buildCustomHeaders(cookie, customHeaders);
 
   console.log(`Fetching ${url}`);
