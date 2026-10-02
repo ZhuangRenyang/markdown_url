@@ -152,7 +152,14 @@ export default async function handler(req, res) {
   }
 }
 
-// Vercel 免费版(Hobby)上限 60 秒，Pro/Enterprise 可改到 300 秒
+// 函数最长执行 60 秒（Vercel Hobby 套餐上限，依赖 Fluid Compute 生效；
+// Pro/Enterprise 才可以调到 300 秒）。
+//
+// 与之配套的时间预算在 _scrapper.js：
+//   · 本地直抓 FETCH_TIMEOUT_MS              10 秒
+//   · 每个第三方服务 12 秒 × 2 次重试 + 间隔  ≈ 24.8 秒
+//   · 兜底链总预算 FALLBACK_TOTAL_BUDGET_MS   40 秒
+// 这样即使兜底链连试多个服务，也不会把 60 秒耗尽导致进程被杀。
 export const config = {
   maxDuration: 60,
   api: {
