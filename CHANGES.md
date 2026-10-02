@@ -274,3 +274,21 @@ git add . && git commit -m "..." && git push
 - `src/lib/i18n.js`：修正上一阶段编辑造成的两处文案粘连（`pasteModeNote`/`pasteEmptyTitle`、`bookmarkletTitle`/`bookmarkletHelp`）；书签相关文案键保留（未被引用，无害）。
 
 > 首选的手机方案现在是：**「粘贴网页内容模式」+ 上传本地网页文件**。后端 `/api/fromhtml`、`/api/cookie`、`/api/admin-cookie` 等能力仍保留作兜底。
+
+---
+
+## 第十二阶段：URL 抓取失败时自动降级到「粘贴网页内容」
+
+用户希望"输入 URL 直接转换"。但实测表明：服务端直抓**只能搞定静态站**（pdai ✅），反爬站（CSDN 521、知乎 403）和 SPA（掘金）抓不到——这是服务端抓取的天花板。
+
+### 改动
+- `src/components/homepage.jsx`：`submit()` 失败分支新增**自动降级**
+  - 解析服务端返回的错误文案：
+    - 命中 `403/521/503/拒绝/反爬/安全验证/人机/验证` → 判定为**反爬拦截**；
+    - 命中 `正文太少/JS 渲染/SPA` → 判定为**JS 动态渲染**；
+  - 命中任一 → **自动开启「粘贴网页内容模式」**，并弹出针对性引导文案，用户无需自行判断该用哪种方式。
+- `src/lib/i18n.js`：新增 `fallbackTitle` / `fallbackBlockedDesc` / `fallbackSpaDesc` 中英文案。
+
+### 现在的完整逻辑
+1. 贴 URL → 服务端直抓 → 成功即出 Markdown（普通站点一步到位）；
+2. 失败（反爬/SPA）→ 自动切粘贴模式 + 明确引导 → 用户复制正文或上传 .html 即可转换。

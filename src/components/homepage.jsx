@@ -202,6 +202,18 @@ export function Homepage() {
         description: reason,
       })
       track("Download Failed", payload)
+      // 自动降级：服务端抓不到（反爬 / SPA）时，直接帮用户切到「粘贴网页内容」模式，
+      // 省得他自己判断该用哪种方式。判定依据：错误信息里的关键词。
+      const r = String(reason || "");
+      const blocked = /403|521|503|拒绝|反爬|安全验证|人机|验证/i.test(r);
+      const tooLittle = /正文太少|JS 渲染|SPA/i.test(r);
+      if (blocked || tooLittle){
+        setPasteMode(true);
+        toast({
+          title: t("fallbackTitle"),
+          description: blocked ? t("fallbackBlockedDesc") : t("fallbackSpaDesc"),
+        });
+      }
     }
     if (resp.ok && !downloadImages){
       const md = await resp.text();

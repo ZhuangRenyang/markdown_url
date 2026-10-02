@@ -55,6 +55,11 @@ const zh = {
   fileLoadedTitle: "已载入文件",
   fileLoadedHint: "已载入：",
   pasteModeNote: "已开启粘贴模式：请在下方粘贴内容后点「转换」，上方输入框可填文章链接（可选）。",
+  fallbackTitle: "已自动切换为「粘贴网页内容」模式",
+  fallbackBlockedDesc:
+    "该站点有反爬拦截（如 CSDN、知乎），服务端无法直接抓取。请在浏览器打开该文章 → 长按全选复制正文（或保存网页为 .html）→ 回本页粘贴/上传后点转换。",
+  fallbackSpaDesc:
+    "该页面是 JS 动态渲染的，服务端拿不到正文。请在浏览器打开该文章 → 复制正文（或保存网页为 .html）→ 回本页粘贴/上传后点转换。",
   pasteEmptyTitle: "请先粘贴内容",
   pasteEmptyDesc: "把文章页复制的内容粘贴到上面的文本框再点转换。",
 
@@ -188,6 +193,11 @@ const en = {
   fileLoadedTitle: "File loaded",
   fileLoadedHint: "Loaded: ",
   pasteModeNote: "Paste mode is on: paste your content below and click Convert. The field above takes the article URL (optional).",
+  fallbackTitle: "Switched to \"Paste page content\" mode",
+  fallbackBlockedDesc:
+    "This site blocks automated fetching (e.g. CSDN, Zhihu). Open the article in your browser → long-press to copy the body (or save the page as .html) → come back and paste/upload it to convert.",
+  fallbackSpaDesc:
+    "This page is JS-rendered, so the server can't get the content. Open the article in your browser → copy the body (or save the page as .html) → come back and paste/upload it to convert.",
   pasteEmptyTitle: "Nothing pasted yet",
   pasteEmptyDesc: "Paste the content you copied from the article page, then click Convert.",
 
