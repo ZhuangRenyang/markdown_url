@@ -297,7 +297,7 @@ export function Homepage() {
   }
 
   return (
-    (<main className="w-full min-h-[100vh] py-5 space-y-4 flex justify-center items-center relative">
+    (<main className="w-full min-h-[100dvh] p-4 sm:py-5 space-y-4 flex justify-center items-center relative">
       <Toaster />
       <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
         <button
