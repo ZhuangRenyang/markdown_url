@@ -213,6 +213,9 @@ export function refineThirdPartyMarkdown(md, url){
   // 只丢「整行就是站点导航/交互」的短行，且要求该行不含中文正文特征（较长的句子）
   const NOISE_LINE = /^\s*(\[?搜索\]?|登录|注册|立即登录|消息|创作中心|创作|关注|点赞|踩|收藏|评论|分享|目录|扫码关注|微信公众号|客服|返回顶部|下载APP|毕业设计|作业解答|AI编程|提问|取消|确定|补充说明（选填）|登录后您可以|未登录|会员·新人礼包|最新推荐文章于|本内容遵循|小编推荐)\s*$/;
 
+  // 「推荐阅读 / 相关推荐」这类小标题（可能带 markdown 粗体或 # 前缀），单独识别
+  const TAIL_HEADING = /^\s*(?:[#*>\-\s]*)(推荐阅读|相关推荐|相关文章|延伸阅读|猜你喜欢|你可能感兴趣|热门推荐|更多推荐|精选推荐)\s*[：:]?\s*(?:\*\*)?\s*$/;
+
   const kept = [];
   for (const line of lines){
     if (NOISE_LINE.test(line)) continue;
@@ -220,13 +223,47 @@ export function refineThirdPartyMarkdown(md, url){
     const onlySelfLinks = /^[\s*\-•·]*(\[[^\]]*\]\([^)]*\)[\s,·]*)+$/.test(line) &&
       /blog\.csdn\.net\/[^)]*\/article\/details|csdnimg\.cn|csdn\.net\/vip|mall\.csdn\.net|g\.csdnimg\.cn|link\.csdn\.net|i\.csdn\.net|mp\.csdn\.net/i.test(line);
     if (onlySelfLinks) continue;
+    // 空锚文本链接行（如 `## [](https://...)`）不含任何可读信息，丢弃
+    if (/^\s*(?:#{1,6}\s*)?(?:\[[^\]]*\]\([^)]*\)\s*)+$/.test(line)) continue;
     kept.push(line);
   }
 
-  const cleaned = kept.join('\n')
+  let cleaned = kept.join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/^\s*\n+/, '')
     .trim();
+
+  // 尾部「推荐阅读」裁剪（保守：只在标记确实位于后半段、且裁完仍有充足正文时才动手）
+  for (const m of cleaned.matchAll(new RegExp(TAIL_HEADING.source, 'gm'))){
+    const pos = m.index;
+    const ratio = pos / cleaned.length;
+    if (ratio < 0.6) break; // 标记出现在前半段 → 视为正文内小标题，绝不裁剪
+    const head = cleaned.slice(0, pos).trim();
+    // 保险：裁完必须仍有充足正文（≥ 原长 50% 且 ≥ 500 字符），否则放弃
+    if (head.length >= Math.max(MIN_CONTENT_LENGTH, cleaned.length * 0.5) && head.length >= 500){
+      cleaned = head;
+    }
+    break;
+  }
+
+  // 兜底：尾部若只剩一整串「链接行」（连续 3 行以上全是链接），视为推荐位全部裁掉
+  {
+    const ls = cleaned.split('\n');
+    let end = ls.length;
+    let linkRun = 0;
+    for (let i = ls.length - 1; i >= 0; i--){
+      const isLinkish = /^\s*(?:#{1,6}\s*)?(?:[!*>\-\s]*)(\[[^\]]*\]\([^)]*\)|!\[[^\]]*\]\([^)]*\))\s*$/.test(ls[i]);
+      const isBlank = /^\s*$/.test(ls[i]);
+      if (isLinkish || isBlank){ end = i; if (isLinkish) linkRun++; }
+      else break;
+    }
+    if (linkRun >= 3 && end > 0){
+      const head = ls.slice(0, end).join('\n').trim();
+      if (head.length >= Math.max(MIN_CONTENT_LENGTH, cleaned.length * 0.5) && head.length >= 500){
+        cleaned = head;
+      }
+    }
+  }
 
   const result = validThirdPartyMarkdown(cleaned);
   if (result){
