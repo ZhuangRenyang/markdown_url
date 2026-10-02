@@ -43,9 +43,19 @@ const zh = {
   cookieHelp:
     "仅本次请求使用，不会保存到服务器。Cookie 含登录凭证，请勿在公开设备填写。",
 
+  // 粘贴网页内容模式：手机没有书签栏时的替代方案
+  pasteMode: "粘贴网页内容模式",
+  pasteModeHelp:
+    "手机没有书签栏？在文章页长按全选复制正文（或复制网页源码），回到这里粘贴，即可转成 Markdown。适合 CSDN、知乎等反爬站。",
+  pasteCardTitle: "粘贴网页内容",
+  pasteCardDesc:
+    "在目标文章页：长按选中正文 → 复制（若复制的是纯文字也可以）。回到本页粘贴到下面，点「转换」即可生成 Markdown。可在下方补充文章链接（可选，用于给图片补全地址）。",
+  pastePlaceholder: "在这里粘贴文章正文 / 网页 HTML / 纯文字……",
+  pasteModeNote: "已开启粘贴模式：请在下方粘贴内容后点「转换」，上方输入框可填文章链接（可选）。",  pasteEmptyTitle: "请先粘贴内容",
+  pasteEmptyDesc: "把文章页复制的内容粘贴到上面的文本框再点转换。",
+
   // 书签工具：在已登录文章页点一下即可转换，无需 cookie / 环境变量
-  bookmarkletTitle: "书签工具",
-  bookmarkletHelp:
+  bookmarkletTitle: "书签工具",  bookmarkletHelp:
     "在已登录的文章页点一下书签即可转换，彻底免去复制 Cookie 和配置环境变量。适合 CSDN、知乎等反爬站点。",
   bookmarkletDesc:
     "把下面的书签拖到浏览器收藏栏。转换时打开那篇文章（已登录），点一下书签即可生成 Markdown——无需懂 Cookie、无需配置任何变量。若在本工具页点书签，会自动帮你打开输入框里粘贴的文章链接。",
@@ -160,6 +170,18 @@ const en = {
   cookiePlaceholder: "Paste cookie, e.g. uuid_tt_dd=...; token=...",
   cookieHelp:
     "Used only for this request, never stored on the server. Contains login credentials — don't enter on shared devices.",
+
+  // Paste mode: fallback when mobile browser has no bookmarks bar
+  pasteMode: "Paste page content mode",
+  pasteModeHelp:
+    "No bookmarks bar on mobile? Long-press and select the article text (or copy the page source) on the article page, come back here and paste it to get Markdown. Works for anti-bot sites like CSDN or Zhihu.",
+  pasteCardTitle: "Paste page content",
+  pasteCardDesc:
+    "On the target article page, long-press to select the body and copy it (plain text is fine too). Paste it below and click Convert to get Markdown. Optionally add the article URL below so images get absolute paths.",
+  pastePlaceholder: "Paste article text / page HTML / plain text here…",
+  pasteModeNote: "Paste mode is on: paste your content below and click Convert. The field above takes the article URL (optional).",
+  pasteEmptyTitle: "Nothing pasted yet",
+  pasteEmptyDesc: "Paste the content you copied from the article page, then click Convert.",
 
   // Bookmarklet: one click on any logged-in article page, no cookie / no env vars
   bookmarkletTitle: "Bookmarklet",

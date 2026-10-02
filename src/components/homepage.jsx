@@ -112,6 +112,9 @@ export function Homepage() {
   const { apiKey, baseUrl, model, hasKey } = useSettings()
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [url, setUrl] = useState("");
+  // 粘贴网页内容模式：手机上无法装书签时，直接在文章页复制正文/HTML 粘贴进来转换
+  const [pasteMode, setPasteMode] = useState(false);
+  const [pastedHtml, setPastedHtml] = useState("");
   const [imagesDir, setImagesDir] = useState("images");
   const [downloadImages, setDownloadImages] = useState(false);
   const [removeNonContent, setRemoveNonContent] = useState(true);
@@ -249,9 +252,49 @@ export function Homepage() {
     setIsLoading(false)
   }
 
-  // 复制书签代码（用户也可直接拖拽上方链接，无需复制）
-  async function copyBookmarklet() {
+  // 粘贴模式提交：把用户在文章页复制的正文/HTML 直接转成 Markdown（无需书签、无需 Cookie）
+  async function submitPasted(){
+    if (isLoading) return;
+    const raw = (pastedHtml || "").trim();
+    if (!raw){
+      return toast({ title: t("pasteEmptyTitle"), description: t("pasteEmptyDesc") });
+    }
+    const looksHtml = /<[a-z][\s\S]*>/i.test(raw);
+    const html = looksHtml
+      ? raw
+      : `<!doctype html><html><head><meta charset="utf-8"></head><body><pre>${raw.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</pre></body></html>`;
+    track("Convert Pasted", {});
+    setIsLoading(true);
     try {
+      const resp = await fetch("/api/fromhtml", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, url, removeNonContent }),
+      });
+      if (!resp.ok){
+        let reason = t("failedDesc");
+        try { const txt = await resp.text(); if (txt) reason = txt; } catch (e) { /* ignore */ }
+        toast({ title: t("failedTitle"), description: reason });
+      } else {
+        const md = await resp.text();
+        toast({ title: t("successTitle"), description: t("successDesc") });
+        const a = document.createElement('a');
+        a.href = `data:text/plain;charset=utf-8,${encodeURIComponent(md)}`;
+        a.download = `${getLastPartOfUrl(url) || "markdown"}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        track("Downloaded Markdown", { pasted: true });
+      }
+    } catch (e) {
+      toast({ title: t("failedTitle"), description: String(e && e.message || e) });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 复制书签代码（用户也可直接拖拽上方链接，无需复制）
+  async function copyBookmarklet() {    try {
       await navigator.clipboard.writeText(bookmarkletCode);
       toast({ title: t("bookmarkletCopied") });
     } catch (e) {
@@ -286,7 +329,7 @@ export function Homepage() {
           </p>
         </div>
         <div className="w-full max-w-sm space-y-2">
-          <div className="flex w-full max-w-sm items-center space-x-2 mb-10">
+          <div className={`flex w-full max-w-sm items-center space-x-2 ${pasteMode ? "mb-4" : "mb-10"}`}>
             <Input id="md-src-url" value={url} type="text" placeholder={t("urlPlaceholder")} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
               if (e.key === "Enter"){
                 submit()
@@ -296,7 +339,11 @@ export function Homepage() {
               {isLoading ? t("converting") : t("convert")}
             </Button>
           </div>
-          
+          {pasteMode && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 pb-2">
+              {t("pasteModeNote")}
+            </p>
+          )}          
           <div className="space-y-2 flex flex-col gap-4">
             <Card>
               <CardHeader>
@@ -336,8 +383,43 @@ export function Homepage() {
                 </HelpTooltip>
               </Label>
             </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="paste-mode" checked={pasteMode} onClick={()=>setPasteMode(!pasteMode)} />
+              <Label className="text-sm leading-none ml-2" htmlFor="paste-mode">
+                {t("pasteMode")}
+                <HelpTooltip>
+                  {t("pasteModeHelp")}
+                </HelpTooltip>
+              </Label>
+            </div>
               </CardContent>
             </Card>
+
+            {pasteMode && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("pasteCardTitle")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    {t("pasteCardDesc")}
+                  </p>
+                  <Textarea
+                    id="pasted-html"
+                    className="min-h-[10rem] font-mono text-xs"
+                    placeholder={t("pastePlaceholder")}
+                    value={pastedHtml}
+                    onChange={val=>setPastedHtml(val.target.value)}
+                  />
+                  <div className="flex items-center gap-2 mt-3">
+                    <Input value={url} type="text" placeholder={`${t("urlPlaceholder")}（可选）`} onChange={val=>setUrl(val.target.value)} />
+                    <Button disabled={isLoading} type="button" onClick={submitPasted}>
+                      {isLoading ? t("converting") : t("convert")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* 书签工具：在已登录文章页点一下即可转换，无需 cookie、无需环境变量 */}
             <Card>

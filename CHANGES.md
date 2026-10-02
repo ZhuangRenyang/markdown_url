@@ -209,3 +209,23 @@ git add . && git commit -m "..." && git push
   - 书签脚本的守卫逻辑升级：当在工具页点击书签时，读取输入框里的链接，**自动在新标签打开该文章**，并提示"请在文章页再点一次书签"；若浏览器拦截弹窗则回退为当前标签跳转；输入框为空时给出粘贴引导。
   - 用户操作变成：工具页粘贴 URL → 点书签（自动打开文章页）→ 在文章页再点一次书签 → 生成 Markdown。
 - `src/lib/i18n.js`：`bookmarkletDesc` / `bookmarkletUsage` 中英文案改为说明新行为（含手机"长按链接→添加书签"提示）。
+
+---
+
+## 第八阶段：新增「粘贴网页内容」模式（手机无书签栏的替代方案）
+
+用户在手机 Edge 上没有「书签栏」入口，书签流程（长按收藏 → 文章页再点一次）过于曲折。本阶段新增**粘贴模式**：在文章页复制正文/源码，回工具页粘贴即可转 Markdown。
+
+### 改动
+- `src/components/homepage.jsx`
+  - 新增 state `pasteMode` / `pastedHtml`；
+  - 选项卡片新增复选框「粘贴网页内容模式」；
+  - 开启后渲染「粘贴网页内容」卡片：多行文本框 + 可选 URL 输入 + 转换按钮；
+  - 新增 `submitPasted()`：把粘贴内容（HTML 或纯文字，纯文字会包成 `<pre>`）POST 到 `/api/fromhtml` 转成 Markdown 并下载，复用与 `submit` 一致的下载逻辑；
+  - 主输入区在粘贴模式下显示一行提示，避免与卡片内 URL 框混淆。
+- `src/lib/i18n.js`：新增 `pasteMode` / `pasteModeHelp` / `pasteCardTitle` / `pasteCardDesc` / `pastePlaceholder` / `pasteEmptyTitle` / `pasteEmptyDesc` / `pasteModeNote` 中英文案。
+
+### 使用流程（手机）
+1. 打开目标文章页（已登录），**长按全选正文 → 复制**（或复制网页源码）；
+2. 回到工具页，勾选「粘贴网页内容模式」；
+3. 粘贴到文本框（可补上文章链接用于图片补全），点「转换」→ 下载 Markdown。
