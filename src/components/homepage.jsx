@@ -297,7 +297,7 @@ export function Homepage() {
 
   return (
     // 用 my-auto 做垂直居中（而不是 items-center）：内容比屏幕高时不会把顶部挤出可视区
-    (<main className="safe-bottom relative flex min-h-[100dvh] w-full justify-center px-4 pb-12 pt-16 sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">
+    (<main className="safe-bottom relative flex min-h-[100dvh] w-full flex-col px-4 pb-5 pt-16 sm:px-6 sm:pb-6 sm:pt-14 lg:px-8">
       <Toaster />
       <div className="safe-top-right absolute right-3 top-3 z-10 flex items-center gap-1.5 sm:right-6 sm:top-6">
         <button
@@ -314,7 +314,7 @@ export function Homepage() {
         <LanguageSwitch />
       </div>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <div className="my-auto flex w-full flex-col items-center">
+      <div className="my-auto flex w-full flex-col items-center py-2">
         <div className="mb-8 space-y-2.5 text-center sm:mb-12 sm:space-y-3">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">📥<br/>Markdown<b>Down</b></h1>
           <p
@@ -516,15 +516,16 @@ export function Homepage() {
           </div>
           
         </div>
-        <footer className="mt-10 text-[11px] text-gray-500 dark:text-gray-400 sm:mt-14 sm:text-xs">
-          <p>
-          © {new Date().getFullYear()}&nbsp;
-            <a className="underline" href="https://github.com/ZhuangRenyang" target="_blank" rel="noopener noreferrer">
-              ZhuangRenyang
-            </a>
-          </p>
-        </footer>
       </div>
+      {/* 页脚固定在页面最底部：内容区用 my-auto 吃掉剩余高度，页脚自然贴底 */}
+      <footer className="mt-10 w-full shrink-0 pb-1 pt-2 text-center text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
+        <p>
+        © {new Date().getFullYear()}&nbsp;
+          <a className="underline" href="https://github.com/ZhuangRenyang" target="_blank" rel="noopener noreferrer">
+            ZhuangRenyang
+          </a>
+        </p>
+      </footer>
       
     </main>)
   );
