@@ -213,9 +213,6 @@ export function refineThirdPartyMarkdown(md, url){
   // 只丢「整行就是站点导航/交互」的短行，且要求该行不含中文正文特征（较长的句子）
   const NOISE_LINE = /^\s*(\[?搜索\]?|登录|注册|立即登录|消息|创作中心|创作|关注|点赞|踩|收藏|评论|分享|目录|扫码关注|微信公众号|客服|返回顶部|下载APP|毕业设计|作业解答|AI编程|提问|取消|确定|补充说明（选填）|登录后您可以|未登录|会员·新人礼包|最新推荐文章于|本内容遵循|小编推荐)\s*$/;
 
-  // 「推荐阅读 / 相关推荐」这类小标题（可能带 markdown 粗体或 # 前缀），单独识别
-  const TAIL_HEADING = /^\s*(?:[#*>\-\s]*)(推荐阅读|相关推荐|相关文章|延伸阅读|猜你喜欢|你可能感兴趣|热门推荐|更多推荐|精选推荐)\s*[：:]?\s*(?:\*\*)?\s*$/;
-
   const kept = [];
   for (const line of lines){
     if (NOISE_LINE.test(line)) continue;
@@ -233,20 +230,44 @@ export function refineThirdPartyMarkdown(md, url){
     .replace(/^\s*\n+/, '')
     .trim();
 
-  // 尾部「推荐阅读」裁剪（保守：只在标记确实位于后半段、且裁完仍有充足正文时才动手）
+  cleaned = trimTrailingNoise(cleaned);
+
+  const result = validThirdPartyMarkdown(cleaned);
+  if (result){
+    console.log(`[refine] 净化：${String(md).length} → ${result.length} 字符`);
+    return result;
+  }
+  // 净化的结果太短说明误删了，退回只剥信封的版本
+  console.log('[refine] 净化后内容过少，退回未净化版本');
+  return stripJinaEnvelope(md);
+}
+
+// 只做「尾部噪音」裁剪：推荐阅读/相关推荐小标题、以及文末成串的链接行。
+// 独立出来是因为：即使命中了 x-target-selector（正文容器），
+// 容器内本身也可能带着 CSDN 自己插在正文末尾的推荐位。
+//
+// 全部走保守策略，宁可不裁也不误伤：
+//   ① 标记必须位于全文 60% 之后
+//   ② 裁完必须仍 ≥ 原长 50% 且 ≥ 500 字符
+export function trimTrailingNoise(text){
+  const TAIL_HEADING = /^\s*(?:[#*>\-\s]*)(推荐阅读|相关推荐|相关文章|延伸阅读|猜你喜欢|你可能感兴趣|热门推荐|更多推荐|精选推荐)\s*[：:]?\s*(?:\*\*)?\s*$/;
+  let cleaned = String(text || '').trim();
+  if (!cleaned) return cleaned;
+
+  // 1) 命中「推荐阅读」这类小标题 → 截断其后内容
   for (const m of cleaned.matchAll(new RegExp(TAIL_HEADING.source, 'gm'))){
     const pos = m.index;
     const ratio = pos / cleaned.length;
-    if (ratio < 0.6) break; // 标记出现在前半段 → 视为正文内小标题，绝不裁剪
+    if (ratio < 0.6) break; // 出现在前半段 → 视为正文内小标题，绝不裁剪
     const head = cleaned.slice(0, pos).trim();
-    // 保险：裁完必须仍有充足正文（≥ 原长 50% 且 ≥ 500 字符），否则放弃
     if (head.length >= Math.max(MIN_CONTENT_LENGTH, cleaned.length * 0.5) && head.length >= 500){
+      console.log(`[trim] 命中尾部小标题，裁剪 ${cleaned.length} → ${head.length} 字符`);
       cleaned = head;
     }
     break;
   }
 
-  // 兜底：尾部若只剩一整串「链接行」（连续 3 行以上全是链接），视为推荐位全部裁掉
+  // 2) 兜底：文末若有连续 3 行以上的纯链接/图片行，视为推荐位一并裁掉
   {
     const ls = cleaned.split('\n');
     let end = ls.length;
@@ -260,19 +281,13 @@ export function refineThirdPartyMarkdown(md, url){
     if (linkRun >= 3 && end > 0){
       const head = ls.slice(0, end).join('\n').trim();
       if (head.length >= Math.max(MIN_CONTENT_LENGTH, cleaned.length * 0.5) && head.length >= 500){
+        console.log(`[trim] 尾部连续 ${linkRun} 行链接，裁剪 ${cleaned.length} → ${head.length} 字符`);
         cleaned = head;
       }
     }
   }
 
-  const result = validThirdPartyMarkdown(cleaned);
-  if (result){
-    console.log(`[refine] 净化：${String(md).length} → ${result.length} 字符`);
-    return result;
-  }
-  // 净化的结果太短说明误删了，退回只剥信封的版本
-  console.log('[refine] 净化后内容过少，退回未净化版本');
-  return stripJinaEnvelope(md);
+  return cleaned;
 }
 
 // 用统一的超时 fetch 拉文本
@@ -339,9 +354,13 @@ async function fetchMarkdownViaJina(url, userKey){
   );
   const valid = validThirdPartyMarkdown(raw);
   if (!valid) return null;
-  // 指定了容器时结果已相当干净，只需剥信封；没指定则做文本级净化
-  const md = target ? (validThirdPartyMarkdown(stripJinaEnvelope(valid)) || valid)
-                    : refineThirdPartyMarkdown(valid, url);
+  // 指定了容器时正文已经较干净，只需剥信封；没指定则做完整的文本级净化。
+  // 但无论哪条路径，都要再跑一次尾部噪音裁剪——因为 CSDN 会把推荐位
+  // 塞在正文容器内部（#content_views 的末尾），光靠 x-target-selector 切不掉。
+  const base = target
+    ? (validThirdPartyMarkdown(stripJinaEnvelope(valid)) || valid)
+    : refineThirdPartyMarkdown(valid, url);
+  const md = base ? (validThirdPartyMarkdown(trimTrailingNoise(base)) || base) : null;
   if (md) console.log(`[jina] 成功，正文 ${md.length} 字符`);
   return md;
 }
