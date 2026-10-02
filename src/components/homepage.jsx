@@ -297,7 +297,7 @@ export function Homepage() {
   }
 
   return (
-    (<main className="w-full min-h-[100dvh] py-3 sm:py-5 sm:min-h-[100vh] space-y-2 sm:space-y-4 flex justify-center items-center relative">
+    (<main className="w-full min-h-[100vh] py-5 space-y-4 flex justify-center items-center relative">
       <Toaster />
       <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
         <button
@@ -315,17 +315,15 @@ export function Homepage() {
       </div>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <div className="container flex flex-col items-center justify-center">
-        <div className="space-y-0.5 sm:space-y-1.5 text-center mb-3 sm:mb-6">
-          <h1 className="text-xl font-bold tracking-tighter sm:text-3xl">
-            <span className="hidden sm:inline">📥<br/></span>Markdown<b>Down</b>
-          </h1>
+        <div className="space-y-1.5 text-center mb-6">
+          <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl">📥<br/>Markdown<b>Down</b></h1>
           <p
-            className="max-w-[520px] text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-4 sm:px-0">
+            className="max-w-[520px] text-sm text-gray-500 dark:text-gray-400">
             {t("subtitle")}<br/> {t("subtitle2")}
           </p>
         </div>
-        <div className="w-full max-w-xs space-y-1.5 sm:space-y-2 px-4 sm:px-0">
-          <div className={`flex w-full max-w-xs items-center space-x-2 ${pasteMode ? "mb-2 sm:mb-3" : "mb-3 sm:mb-6"}`}>
+        <div className="w-full max-w-xs space-y-2">
+          <div className={`flex w-full max-w-xs items-center space-x-2 ${pasteMode ? "mb-3" : "mb-6"}`}>
             <div className="relative flex-1">
               <Input id="md-src-url" value={url} type="text" placeholder={t("urlPlaceholder")} className={url ? "pr-8" : ""} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
                 if (e.key === "Enter"){
@@ -349,17 +347,16 @@ export function Homepage() {
             </Button>
           </div>
           {pasteMode && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 pb-1 sm:pb-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 pb-2">
               {t("pasteModeNote")}
             </p>
           )}          
-          <div className="space-y-1.5 sm:space-y-2 flex flex-col gap-2 sm:gap-3">
+          <div className="space-y-2 flex flex-col gap-3">
             <Card className="shadow-sm">
-              <CardHeader className="space-y-0 p-3 pb-1.5 sm:space-y-1 sm:p-3.5 sm:pb-2">
+              <CardHeader className="space-y-1 p-3.5 pb-2">
                 <CardTitle className="text-sm font-semibold">{t("options")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-3 pt-0 sm:p-3.5 sm:pt-0">
-              <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 sm:flex sm:flex-col sm:gap-y-0">
+              <CardContent className="p-3.5 pt-0">
               <div className="flex items-center space-x-2">
               <Checkbox id="remove-noncontent" checked={removeNonContent} onClick={t=>setRemoveNonContent(!removeNonContent)} />
               <label className="text-sm leading-none" htmlFor="remove-noncontent">
@@ -378,7 +375,7 @@ export function Homepage() {
                 </HelpTooltip>
               </label>
             </div>
-            <div className="flex items-center space-x-2 sm:mt-2">
+            <div className="flex items-center space-x-2">
             <Checkbox id="apply-gpt" checked={gptEnabled} onClick={t=>{
               const newValue = !gptEnabled;
               if (!newValue){
@@ -393,7 +390,7 @@ export function Homepage() {
                 </HelpTooltip>
               </Label>
             </div>
-            <div className="flex items-center space-x-2 sm:mt-2">
+            <div className="flex items-center space-x-2">
               <Checkbox id="paste-mode" checked={pasteMode} onClick={()=>setPasteMode(!pasteMode)} />
               <Label className="text-sm leading-none ml-2" htmlFor="paste-mode">
                 {t("pasteMode")}
@@ -402,16 +399,15 @@ export function Homepage() {
                 </HelpTooltip>
               </Label>
             </div>
-              </div>
               </CardContent>
             </Card>
 
             {pasteMode && (
               <Card className="shadow-sm">
-                <CardHeader className="space-y-0 p-3 pb-1.5 sm:space-y-1 sm:p-3.5 sm:pb-2">
+                <CardHeader className="space-y-1 p-3.5 pb-2">
                   <CardTitle className="text-sm font-semibold">{t("pasteCardTitle")}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0 sm:p-3.5 sm:pt-0">
+                <CardContent className="p-3.5 pt-0">
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                     {t("pasteCardDesc")}
                   </p>
@@ -446,7 +442,7 @@ export function Homepage() {
                   </div>
                   <Textarea
                     id="pasted-html"
-                    className="min-h-[7rem] sm:min-h-[10rem] font-mono text-xs"
+                    className="min-h-[10rem] font-mono text-xs"
                     placeholder={t("pastePlaceholder")}
                     value={pastedHtml}
                     onChange={val=>setPastedHtml(val.target.value)}
@@ -462,10 +458,10 @@ export function Homepage() {
             )}
             {downloadImages && (
               <Card className="shadow-sm">
-              <CardHeader className="space-y-0 p-3 pb-1.5 sm:space-y-1 sm:p-3.5 sm:pb-2">
+              <CardHeader className="space-y-1 p-3.5 pb-2">
                 <CardTitle className="text-sm font-semibold">{t("imageOptions")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-3 pt-0 sm:p-3.5 sm:pt-0">
+              <CardContent className="p-3.5 pt-0">
               <>
               <div className="space-y-2">
               <Label className="text-sm leading-none" htmlFor="images-folder">
@@ -495,10 +491,10 @@ export function Homepage() {
             </Card>
             )}
  {gptEnabled && <Card className="shadow-sm">
-              <CardHeader className="space-y-0 p-3 pb-1.5 sm:space-y-1 sm:p-3.5 sm:pb-2">
+              <CardHeader className="space-y-1 p-3.5 pb-2">
                 <CardTitle className="text-sm font-semibold">{t("gptOptions")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-3 pt-0 sm:p-3.5 sm:pt-0">
+              <CardContent className="p-3.5 pt-0">
             <div className="space-y-2">
             
               
