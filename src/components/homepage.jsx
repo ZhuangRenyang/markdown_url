@@ -120,12 +120,6 @@ export function Homepage() {
   const [gptEnabled, setGptEnabled] = useState(false);
   const [applyGpt, setApplyGpt] = useState("");
   const [bigModel, setBigModel] = useState(false);
-  // 高级选项：反爬站点（如 CSDN）需要登录态才能抓取
-  const [cookie, setCookie] = useState("");
-  // 恢复链接：把 Cookie 加密成 token，手机打开链接即可自动配置（无状态，服务端不落盘）
-  const [restoreToken, setRestoreToken] = useState("");
-  const [restoreLink, setRestoreLink] = useState("");
-  const [restoreBusy, setRestoreBusy] = useState(false);
   // 书签工具：API 地址（默认当前站点源，自托管时可改）
   const [apiBase, setApiBase] = useState(
     typeof window !== "undefined" ? window.location.origin : "https://md.cati.cc.cd"
@@ -144,8 +138,6 @@ export function Homepage() {
       removeNonContent,
       applyGpt,
       bigModel,
-      cookie,
-      restoreToken,
     }
     localStorage.setItem("settings", JSON.stringify(settings))
   }
@@ -163,19 +155,7 @@ export function Homepage() {
       setImagesDir(parsed.imagesDir)
       setDownloadImages(!!parsed.downloadImages)
       SetImagesBasePathOverride(parsed.imagesBasePathOverride)
-      setCookie(parsed.cookie || "")
-      setRestoreToken(parsed.restoreToken || "")
     }
-    // 若是通过「恢复链接」打开（?restore=xxx），取出 token 并自动配置，同时清理地址栏避免泄露
-    try {
-      const p = new URLSearchParams(window.location.search).get("restore");
-      if (p) {
-        setRestoreToken(p);
-        const prev = JSON.parse(localStorage.getItem("settings") || "{}");
-        localStorage.setItem("settings", JSON.stringify({ ...prev, restoreToken: p }));
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    } catch (e) { /* ignore */ }
   }, [])
 
   async function submit(){
@@ -197,8 +177,6 @@ export function Homepage() {
       removeNonContent,
       applyGpt,
       bigModel,
-      cookie,
-      restoreToken,
     }
 
     // 用了 AI 处理却没填密钥，直接拦下来，别浪费一次转换
@@ -269,32 +247,6 @@ export function Homepage() {
     }
     saveSettingsToLocalStorage()
     setIsLoading(false)
-  }
-
-  // 生成恢复链接：把当前 Cookie 加密成 token，构造 ?restore= 链接，发到手机点开即自动配置
-  async function generateRestore() {
-    if (!cookie || !cookie.trim()) {
-      return toast({ title: t("invalidCookieTitle"), description: t("invalidCookieDesc") });
-    }
-    setRestoreBusy(true);
-    try {
-      const resp = await fetch("/api/cookie", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cookie: cookie.trim() }),
-      });
-      if (!resp.ok) throw new Error("生成失败");
-      const { restoreToken: tok } = await resp.json();
-      setRestoreToken(tok);
-      const link = `${window.location.origin}/?restore=${tok}`;
-      setRestoreLink(link);
-      try { await navigator.clipboard.writeText(link); } catch (e) { /* 复制失败不阻断流程 */ }
-      toast({ title: t("restoreLinkTitle"), description: t("restoreLinkDesc") });
-    } catch (e) {
-      toast({ title: t("failedTitle"), description: t("restoreGenFail") });
-    } finally {
-      setRestoreBusy(false);
-    }
   }
 
   // 复制书签代码（用户也可直接拖拽上方链接，无需复制）
@@ -384,56 +336,6 @@ export function Homepage() {
                 </HelpTooltip>
               </Label>
             </div>
-              </CardContent>
-            </Card>
-
-            {/* 高级选项：反爬站点（如 CSDN）需要登录态才能抓取 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {t("advancedOptions")}
-                  <HelpTooltip>
-                    {t("advancedOptionsHelp")}
-                  </HelpTooltip>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label className="text-sm leading-none" htmlFor="cookie-input">
-                    {t("cookieLabel")}
-                    <HelpTooltip>
-                      {t("cookieHelp")}
-                    </HelpTooltip>
-                  </Label>
-                  <Textarea
-                    id="cookie-input"
-                    className="min-h-[6rem] font-mono text-xs"
-                    placeholder={t("cookiePlaceholder")}
-                    value={cookie}
-                    onChange={val => setCookie(val.target.value)}
-                  />
-                  <div className="flex items-center gap-2 pt-1">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      disabled={restoreBusy || !cookie.trim()}
-                      onClick={generateRestore}
-                    >
-                      {restoreBusy ? t("generating") : t("generateRestoreBtn")}
-                    </Button>
-                    {restoreToken && (
-                      <span className="text-xs text-green-600 dark:text-green-400">✓ {t("restoreReady")}</span>
-                    )}
-                  </div>
-                  {restoreLink && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 break-all pt-1">
-                      {t("restoreLinkHint")}
-                      <br />
-                      <code className="text-[11px]">{restoreLink}</code>
-                    </p>
-                  )}
-                </div>
               </CardContent>
             </Card>
 
