@@ -35,7 +35,7 @@ import { track } from "./analytics"
 import { LanguageSwitch, useLanguage } from "./language-provider"
 import { SettingsDialog } from "./settings-dialog"
 import { useSettings } from "./settings-provider"
-import { Settings as SettingsIcon } from "lucide-react"
+import { Settings as SettingsIcon, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import {
   Card,
@@ -324,11 +324,24 @@ export function Homepage() {
         </div>
         <div className="w-full max-w-xs space-y-2">
           <div className={`flex w-full max-w-xs items-center space-x-2 ${pasteMode ? "mb-3" : "mb-6"}`}>
-            <Input id="md-src-url" value={url} type="text" placeholder={t("urlPlaceholder")} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
-              if (e.key === "Enter"){
-                submit()
-              }
-            }} />
+            <div className="relative flex-1">
+              <Input id="md-src-url" value={url} type="text" placeholder={t("urlPlaceholder")} className={url ? "pr-8" : ""} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
+                if (e.key === "Enter"){
+                  submit()
+                }
+              }} />
+              {url && (
+                <button
+                  type="button"
+                  aria-label={t("clearInput")}
+                  title={t("clearInput")}
+                  onClick={() => setUrl("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
             <Button disabled={isLoading} type="submit" onClick={submit}>
               {isLoading ? t("converting") : t("convert")}
             </Button>
