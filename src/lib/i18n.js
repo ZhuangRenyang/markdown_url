@@ -137,11 +137,12 @@ const zh = {
   testConnection: "测试连接",
   fetchServiceTitle: "网页抓取服务",
   fetchServiceDesc:
-    "遇到 CSDN、知乎等反爬站，或纯 JS 渲染的页面时，用第三方抓取服务来取正文。密钥只存在本地，随本次请求发给服务器用一次。",
+    "遇到 CSDN、知乎等反爬站，或纯 JS 渲染的页面时，用第三方抓取服务来取正文。默认走免费服务，无需注册；密钥只存在本地，随本次请求发给服务器用一次。",
   fetchProvider: "抓取方式",
-  fetchKeyHelp: "到对应服务官网注册即可拿到密钥；留空则用服务端预设（若有）。",
+  fetchKeyHelp: "可留空。填了用你自己的额度，避免和其他访客共用。",
   fetchAutoHelp:
-    "自动模式：先服务端直抓，失败后依次尝试可用的第三方服务，无需填写密钥。",
+    "自动模式：先服务端直抓，失败后自动用免费的 Jina Reader 兜底，无需注册、无需填密钥，开箱即用。",
+  fetchNeedKey: "该服务需要先注册并填入 API 密钥，否则会被自动跳过。",
   testing: "测试中...",
   testOk: "连接成功",
   testFail: "连接失败",
@@ -286,11 +287,12 @@ const en = {
   testConnection: "Test connection",
   fetchServiceTitle: "Web scraping service",
   fetchServiceDesc:
-    "For anti-bot sites (CSDN, Zhihu) or JS-rendered pages, fetch content via a third-party scraping service. The key stays local and is sent once per request.",
+    "For anti-bot sites (CSDN, Zhihu) or JS-rendered pages, fetch content via a third-party scraping service. Uses a free service by default — no signup needed. The key stays local and is sent once per request.",
   fetchProvider: "Fetch method",
-  fetchKeyHelp: "Sign up on the provider's site to get a key; leave empty to use the server default (if any).",
+  fetchKeyHelp: "Optional. With your own key, you get your own quota instead of sharing it.",
   fetchAutoHelp:
-    "Auto: try a direct fetch first, then fall back through available providers. No key required.",
+    "Auto: try a direct fetch first, then fall back to the free Jina Reader. No signup or key required — works out of the box.",
+  fetchNeedKey: "This service requires an API key; without one it is skipped automatically.",
   testing: "Testing...",
   testOk: "Connected",
   testFail: "Failed",
