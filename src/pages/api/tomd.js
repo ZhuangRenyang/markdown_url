@@ -54,7 +54,7 @@ function buildCustomHeaders(cookie, customHeaders) {
 
 export default async function handler(req, res) {
   // get params from body
-  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel, cookie, customHeaders, restoreToken } = req.body;
+  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel, cookie, customHeaders, restoreToken, fetchProvider } = req.body;
 
   if (!url || typeof url !== 'string') {
     // 注意：必须 return，否则会拿着空 url 继续往下跑
@@ -101,6 +101,18 @@ export default async function handler(req, res) {
   }
   const headersForFetch = buildCustomHeaders(cookie, customHeaders);
 
+  // 用户在前端「设置」里选的抓取服务 + 自己的 key。
+  // 只允许白名单内的 provider，避免被拿去做任意请求；key 仅本次使用，不落服务器。
+  const ALLOWED_PROVIDERS = ['auto', 'jina', 'scraperapi', 'scrapingant'];
+  const providerConfig = {
+    provider: ALLOWED_PROVIDERS.includes(fetchProvider && fetchProvider.provider)
+      ? fetchProvider.provider
+      : 'auto',
+    key: (fetchProvider && typeof fetchProvider.key === 'string')
+      ? fetchProvider.key.trim().slice(0, 300)
+      : '',
+  };
+
   console.log(`Fetching ${url}`);
   // random tmp folder in tmp directory
   const folder = path.join(os.tmpdir(), `markdd-${Math.random().toString(36).substring(7)}`);
@@ -133,7 +145,8 @@ export default async function handler(req, res) {
       applyGpt,
       bigModel === true,
       aiConfig,
-      headersForFetch
+      headersForFetch,
+      providerConfig
     );
 
     if (downloadImages === true){
