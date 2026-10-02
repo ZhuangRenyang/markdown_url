@@ -60,7 +60,7 @@ function getLastPartOfUrl(url){
 // 因此完全不需要用户懂 Cookie，也不需要服务端配置任何环境变量。
 function buildBookmarklet(base){
   const safe = String(base || "").replace(/'/g, "\\'")
-  const code = `(function(){var API='${safe}';var html=document.documentElement.outerHTML;var url=location.href;fetch(API+'/api/fromhtml',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:html,url:url,removeNonContent:true})}).then(function(r){return r.text();}).then(function(md){if(!md||md.length<50){alert('转换失败：正文为空，可能页面尚未渲染完成，请稍候重试。');return;}var blob=new Blob([md],{type:'text/markdown'});var w=window.open('','_blank');if(!w){alert('被浏览器拦截，请允许弹出窗口后重试。');return;}var esc=md.replace(/&/g,'&amp;').replace(/</g,'&lt;');w.document.write('<!doctype html><meta charset=utf-8><title>Markdown</title><div style=\"position:sticky;top:0;padding:8px;background:#1f2937;color:#fff;font:13px sans-serif;z-index:9\"><button onclick=\"navigator.clipboard.writeText(document.getElementById(\\'md\\').value)\">复制</button> <a download=\"article.md\" href=\"'+URL.createObjectURL(blob)+'\"><button>下载 .md</button></a> <span>已转换 '+md.length+' 字</span></div><textarea id=\"md\" style=\"width:100%;height:92vh;box-sizing:border-box;border:0;padding:12px;font:13px/1.5 monospace\">'+esc+'</textarea>');w.document.close();}).catch(function(e){alert('转换出错：'+(e&&e.message?e.message:e));});})();`
+  const code = `(function(){var API='${safe}';var targetHost='';try{targetHost=new URL(API).host;}catch(e){}if(targetHost&&location.host===targetHost){alert('请在【目标文章页】上点此书签，不要在本工具页面点。\\n正确用法：先打开要转换的文章（已登录），再点书签。');return;}var html=document.documentElement.outerHTML;var url=location.href;fetch(API+'/api/fromhtml',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:html,url:url,removeNonContent:true})}).then(function(r){return r.text();}).then(function(md){if(!md||md.length<50){alert('转换失败：正文为空，可能页面尚未渲染完成，请稍候重试。');return;}var blob=new Blob([md],{type:'text/markdown'});var w=window.open('','_blank');if(!w){alert('被浏览器拦截，请允许弹出窗口后重试。');return;}var esc=md.replace(/&/g,'&amp;').replace(/</g,'&lt;');w.document.write('<!doctype html><meta charset=utf-8><title>Markdown</title><div style=\"position:sticky;top:0;padding:8px;background:#1f2937;color:#fff;font:13px sans-serif;z-index:9\"><button onclick=\"navigator.clipboard.writeText(document.getElementById(\\'md\\').value)\">复制</button> <a download=\"article.md\" href=\"'+URL.createObjectURL(blob)+'\"><button>下载 .md</button></a> <span>已转换 '+md.length+' 字</span></div><textarea id=\"md\" style=\"width:100%;height:92vh;box-sizing:border-box;border:0;padding:12px;font:13px/1.5 monospace\">'+esc+'</textarea>');w.document.close();}).catch(function(e){alert('转换出错：'+(e&&e.message?e.message:e)+'\\n\\n若显示 Failed to fetch，通常是在本工具页面点了书签（请到目标文章页再点），或页面未加载完/被网络策略拦截。');});})();`
   return 'javascript:' + code
 }
 
@@ -120,8 +120,8 @@ export function Homepage() {
   const [gptEnabled, setGptEnabled] = useState(false);
   const [applyGpt, setApplyGpt] = useState("");
   const [bigModel, setBigModel] = useState(false);
-  // 书签工具：API 地址（默认当前站点源，自托管时可改）
-  const [apiBase, setApiBase] = useState(
+  // 书签工具：接口地址固定用本站域名自动生成，不暴露输入框（避免被误填成文章地址导致 Failed to fetch）
+  const [apiBase] = useState(
     typeof window !== "undefined" ? window.location.origin : "https://md.cati.cc.cd"
   );
   const bookmarkletCode = buildBookmarklet(apiBase);
@@ -353,14 +353,6 @@ export function Homepage() {
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                   {t("bookmarkletDesc")}
                 </p>
-                <div className="flex items-center gap-2 mb-3">
-                  <Input
-                    value={apiBase}
-                    type="text"
-                    onChange={val => setApiBase(val.target.value)}
-                    placeholder="https://md.cati.cc.cd"
-                  />
-                </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <a
                     href={bookmarkletHref}

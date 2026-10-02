@@ -48,7 +48,7 @@ const zh = {
   bookmarkletHelp:
     "在已登录的文章页点一下书签即可转换，彻底免去复制 Cookie 和配置环境变量。适合 CSDN、知乎等反爬站点。",
   bookmarkletDesc:
-    "把下面的书签拖到浏览器收藏栏。之后打开任意已登录的文章页，点该书签即可把正文转成 Markdown——全程不需要懂 Cookie，也不用配置任何变量。",
+    "把下面的书签拖到浏览器收藏栏。之后打开任意已登录的文章页，点该书签即可把正文转成 Markdown——全程不需要懂 Cookie，也不用配置任何变量。（注意：请在文章页点书签，不要在本工具页面点。）",
   bookmarkletDrag: "拖我到收藏栏 / 点我转换",
   bookmarkletDragHint: "把此链接拖到书签栏；或右键收藏。以后在文章页点它即可转换。",
   bookmarkletCopyBtn: "复制书签代码",
@@ -166,7 +166,7 @@ const en = {
   bookmarkletHelp:
     "One click on any logged-in article page converts it — no cookie copy, no env vars. Great for anti-bot sites like CSDN or Zhihu.",
   bookmarkletDesc:
-    "Drag the bookmarklet below to your bookmarks bar. Then open any logged-in article and click it to get Markdown — no cookie knowledge, no env config.",
+    "Drag the bookmarklet below to your bookmarks bar. Then open any logged-in article and click it to get Markdown — no cookie knowledge, no env config. (Click it on the article page, not on this tool page.)",
   bookmarkletDrag: "Drag me to bookmarks / Click to convert",
   bookmarkletDragHint: "Drag this link to your bookmarks bar, or right-click to bookmark. Click it on any article page to convert.",
   bookmarkletCopyBtn: "Copy bookmarklet",
