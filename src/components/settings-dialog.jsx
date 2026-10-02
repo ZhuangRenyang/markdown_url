@@ -4,10 +4,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "./language-provider";
 import { PRESETS, useSettings } from "./settings-provider";
+import { FETCH_PROVIDERS, useFetchProvider } from "./fetch-provider";
 
 export function SettingsDialog({ open, onClose }) {
   const { t, lang } = useLanguage();
   const { baseUrl, apiKey, model, hasKey, save, clear } = useSettings();
+  const fetchCfg = useFetchProvider();
 
   const [baseUrlInput, setBaseUrlInput] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
@@ -16,6 +18,16 @@ export function SettingsDialog({ open, onClose }) {
   const [showKey, setShowKey] = useState(false);
   const [test, setTest] = useState(null);
   const [saved, setSaved] = useState(false);
+
+  // 抓取服务相关的表单状态
+  const [fetchProvider, setFetchProvider] = useState("auto");
+  const [fetchKeys, setFetchKeys] = useState({
+    jinaKey: "",
+    scraperapiKey: "",
+    scrapingantKey: "",
+  });
+  const [showFetchKey, setShowFetchKey] = useState(false);
+  const [fetchSaved, setFetchSaved] = useState(false);
 
   // 每次打开弹窗时，用已保存的值填充表单
   useEffect(() => {
@@ -28,9 +40,27 @@ export function SettingsDialog({ open, onClose }) {
     setShowKey(false);
     const hit = PRESETS.find((p) => p.baseUrl && p.baseUrl === baseUrl);
     setPreset(hit ? hit.id : baseUrl ? "custom" : "apihub");
-  }, [open, baseUrl, apiKey, model]);
+    // 抓取服务
+    setFetchProvider(fetchCfg.provider || "auto");
+    setFetchKeys({
+      jinaKey: fetchCfg.jinaKey || "",
+      scraperapiKey: fetchCfg.scraperapiKey || "",
+      scrapingantKey: fetchCfg.scrapingantKey || "",
+    });
+    setShowFetchKey(false);
+    setFetchSaved(false);
+  }, [open, baseUrl, apiKey, model, fetchCfg]);
 
   if (!open) return null;
+
+  // 当前抓取服务预设（决定要不要显示 key 输入框、placeholder 是什么）
+  const activeFetchPreset =
+    FETCH_PROVIDERS.find((p) => p.id === fetchProvider) || FETCH_PROVIDERS[0];
+
+  function handleSaveFetch() {
+    fetchCfg.save({ provider: fetchProvider, ...fetchKeys });
+    setFetchSaved(true);
+  }
 
   function pickPreset(p) {
     setPreset(p.id);
@@ -212,6 +242,84 @@ export function SettingsDialog({ open, onClose }) {
             </Button>
             <Button className="flex-1" onClick={handleSave}>
               {saved ? `✓ ${t("saveConnection")}` : t("saveConnection")}
+            </Button>
+          </div>
+
+          {/* ===== 网页抓取服务：反爬 / SPA 站点用它来抓正文 ===== */}
+          <div className="mt-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="text-sm font-semibold">{t("fetchServiceTitle")}</h3>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t("fetchServiceDesc")}
+            </p>
+          </div>
+
+          <div>
+            <Label className="mb-2 block text-sm">{t("fetchProvider")}</Label>
+            <div className="flex flex-wrap gap-2">
+              {FETCH_PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setFetchProvider(p.id)}
+                  className={
+                    "rounded-lg px-3 py-1.5 text-xs transition-colors " +
+                    (fetchProvider === p.id
+                      ? "bg-orange-500 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
+                  }>
+                  {lang === "zh" ? p.labelZh : p.labelEn}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeFetchPreset.keyField ? (
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <Label className="text-sm" htmlFor="cfg-fetchkey">
+                  {activeFetchPreset.labelZh} {t("apiKey")}
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => setShowFetchKey(!showFetchKey)}
+                  className="text-xs text-gray-500 underline hover:text-gray-800 dark:hover:text-gray-200">
+                  {showFetchKey ? t("hide") : t("show")}
+                </button>
+              </div>
+              <Input
+                id="cfg-fetchkey"
+                type={showFetchKey ? "text" : "password"}
+                value={fetchKeys[activeFetchPreset.keyField] || ""}
+                placeholder={activeFetchPreset.keyPlaceholder}
+                autoComplete="off"
+                onChange={(e) =>
+                  setFetchKeys({ ...fetchKeys, [activeFetchPreset.keyField]: e.target.value })
+                }
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {t("fetchKeyHelp")}
+              </p>
+            </div>
+          ) : (
+            <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-800/60 dark:text-gray-300">
+              {t("fetchAutoHelp")}
+            </p>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                fetchCfg.clear();
+                setFetchProvider("auto");
+                setFetchKeys({ jinaKey: "", scraperapiKey: "", scrapingantKey: "" });
+                setFetchSaved(false);
+              }}>
+              {t("clearKey")}
+            </Button>
+            <Button className="flex-1" onClick={handleSaveFetch}>
+              {fetchSaved ? `✓ ${t("saveConnection")}` : t("saveConnection")}
             </Button>
           </div>
         </div>
