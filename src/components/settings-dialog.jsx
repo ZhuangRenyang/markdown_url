@@ -120,12 +120,12 @@ export function SettingsDialog({ open, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6 sm:p-3"
+      className="safe-bottom fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-6"
       onClick={onClose}>
       <div
-        className="flex max-h-[80vh] w-full max-w-[320px] flex-col rounded-lg border border-gray-200 bg-white shadow-lg sm:max-h-[88vh] sm:max-w-sm sm:rounded-xl dark:border-gray-700 dark:bg-gray-900"
+        className="safe-bottom flex max-h-[90vh] w-full max-w-[calc(100vw-1.5rem)] flex-col rounded-lg border border-gray-200 bg-white shadow-lg sm:max-h-[86vh] sm:max-w-md sm:rounded-xl dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between border-b border-gray-100 px-3 py-2.5 dark:border-gray-800 sm:px-4 sm:py-3">
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-5 sm:py-4">
           <div>
             <h2 className="text-sm font-semibold">{t("settingsTitle")}</h2>
             <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
@@ -140,9 +140,9 @@ export function SettingsDialog({ open, onClose }) {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto sm:space-y-3 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 sm:space-y-3.5 sm:px-5 sm:py-4">
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">{t("apiSite")}</Label>
+            <Label className="mb-1.5 block text-[13px] font-medium sm:text-xs">{t("apiSite")}</Label>
             <div className="flex flex-wrap gap-1.5">
               {PRESETS.map((p) => (
                 <button
@@ -150,7 +150,7 @@ export function SettingsDialog({ open, onClose }) {
                   type="button"
                   onClick={() => pickPreset(p)}
                   className={
-                    "rounded-md px-2 py-0.5 text-[11px] transition-colors sm:px-2.5 sm:py-1 sm:text-xs " +
+                    "rounded-md px-2.5 py-1.5 text-xs transition-colors sm:py-1 " +
                     (preset === p.id
                       ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
@@ -162,7 +162,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1 block text-xs font-medium" htmlFor="cfg-baseurl">
+            <Label className="mb-1 block text-[13px] font-medium sm:text-xs" htmlFor="cfg-baseurl">
               {t("baseUrl")}
             </Label>
             <Input
@@ -175,7 +175,7 @@ export function SettingsDialog({ open, onClose }) {
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <Label className="text-xs font-medium" htmlFor="cfg-apikey">
+              <Label className="text-[13px] font-medium sm:text-xs" htmlFor="cfg-apikey">
                 {t("apiKey")}
               </Label>
               <button
@@ -196,7 +196,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1 block text-xs font-medium" htmlFor="cfg-model">
+            <Label className="mb-1 block text-[13px] font-medium sm:text-xs" htmlFor="cfg-model">
               {t("model")}
             </Label>
             <Input
@@ -207,7 +207,7 @@ export function SettingsDialog({ open, onClose }) {
             />
           </div>
 
-          <p className="rounded-md bg-orange-50 px-2 py-1 text-[10.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+          <p className="rounded-md bg-orange-50 px-2.5 py-1.5 text-[11.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
             ⚠ {t("keyWarning")}
           </p>
 
@@ -236,11 +236,11 @@ export function SettingsDialog({ open, onClose }) {
             </p>
           )}
 
-          <div className="flex gap-1.5 pt-0.5">
-            <Button variant="outline" className="flex-1" onClick={handleClear}>
+          <div className="flex gap-2 pt-1">
+            <Button variant="outline" className="h-11 flex-1 sm:h-10" onClick={handleClear}>
               {t("clearKey")}
             </Button>
-            <Button className="flex-1" onClick={handleSave}>
+            <Button className="h-11 flex-1 sm:h-10" onClick={handleSave}>
               {saved ? `✓ ${t("saveConnection")}` : t("saveConnection")}
             </Button>
           </div>
@@ -254,7 +254,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">{t("fetchProvider")}</Label>
+            <Label className="mb-1.5 block text-[13px] font-medium sm:text-xs">{t("fetchProvider")}</Label>
             <div className="flex flex-wrap gap-2">
               {FETCH_PROVIDERS.map((p) => (
                 <button
@@ -262,7 +262,7 @@ export function SettingsDialog({ open, onClose }) {
                   type="button"
                   onClick={() => setFetchProvider(p.id)}
                   className={
-                    "flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] transition-colors sm:px-2.5 sm:py-1 sm:text-xs " +
+                    "flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs transition-colors sm:py-1 " +
                     (fetchProvider === p.id
                       ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
@@ -270,7 +270,7 @@ export function SettingsDialog({ open, onClose }) {
                   <span>{lang === "zh" ? p.labelZh : p.labelEn}</span>
                   <span
                     className={
-                      "rounded px-1 py-0.5 text-[9px] leading-none sm:text-[10px] " +
+                      "rounded px-1 py-0.5 text-[10px] leading-none sm:text-[10px] " +
                       (p.free
                         ? fetchProvider === p.id
                           ? "bg-white/25 text-white"
@@ -287,7 +287,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           {fetchProvider === "auto" && (
-            <p className="rounded-md bg-green-50 px-2 py-1 text-[10.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-green-700 dark:bg-green-950/40 dark:text-green-300">
+            <p className="rounded-md bg-green-50 px-2.5 py-1.5 text-[11.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-green-700 dark:bg-green-950/40 dark:text-green-300">
               ✓ {t("fetchAutoHelp")}
             </p>
           )}
@@ -295,7 +295,7 @@ export function SettingsDialog({ open, onClose }) {
           {activeFetchPreset.keyField ? (
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <Label className="text-xs font-medium" htmlFor="cfg-fetchkey">
+                <Label className="text-[13px] font-medium sm:text-xs" htmlFor="cfg-fetchkey">
                   {activeFetchPreset.labelZh} {t("apiKey")}
                 </Label>
                 <button
@@ -325,15 +325,15 @@ export function SettingsDialog({ open, onClose }) {
             activeFetchPreset.keyField &&
             !fetchKeys[activeFetchPreset.keyField] &&
             !activeFetchPreset.free && (
-              <p className="rounded-md bg-orange-50 px-2 py-1 text-[10.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+              <p className="rounded-md bg-orange-50 px-2.5 py-1.5 text-[11.5px] sm:px-2.5 sm:py-1.5 sm:text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
                 ⚠ {t("fetchNeedKey")}
               </p>
             )}
 
-          <div className="flex gap-1.5 pt-0.5">
+          <div className="flex gap-2 pt-1">
             <Button
               variant="outline"
-              className="flex-1"
+              className="h-11 flex-1 sm:h-10"
               onClick={() => {
                 fetchCfg.clear();
                 setFetchProvider("auto");
@@ -342,7 +342,7 @@ export function SettingsDialog({ open, onClose }) {
               }}>
               {t("clearKey")}
             </Button>
-            <Button className="flex-1" onClick={handleSaveFetch}>
+            <Button className="h-11 flex-1 sm:h-10" onClick={handleSaveFetch}>
               {fetchSaved ? `✓ ${t("saveConnection")}` : t("saveConnection")}
             </Button>
           </div>

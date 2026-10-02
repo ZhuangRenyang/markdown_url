@@ -91,9 +91,8 @@ function HelpTooltip({children}){
       <Button
         type="button"
         variant="ghost"
-        size="ghost"
         aria-label="帮助"
-        className="ml-0"
+        className="ml-0 h-6 w-6 rounded-full p-0"
         onPointerEnter={(e) => { if (e.pointerType === "mouse") setOpen(true) }}
         onPointerLeave={(e) => { if (e.pointerType === "mouse") setOpen(false) }}
         onClick={() => setOpen(o => !o)}
@@ -104,7 +103,7 @@ function HelpTooltip({children}){
         <span
           role="tooltip"
           onClick={(e) => e.stopPropagation()}
-          className="absolute left-1/2 top-full z-50 mt-2 w-64 max-w-[80vw] -translate-x-1/2 rounded-md border border-gray-200 bg-white p-3 text-xs leading-relaxed text-gray-700 shadow-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+          className="absolute left-1/2 top-full z-50 mt-2 w-64 max-w-[80vw] -translate-x-1/2 break-words rounded-md border border-gray-200 bg-white p-3 text-xs leading-relaxed text-gray-700 shadow-lg sm:w-72 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
         >
           {children}
         </span>
@@ -297,35 +296,36 @@ export function Homepage() {
   }
 
   return (
-    (<main className="w-full min-h-[100dvh] p-4 sm:py-5 space-y-4 flex justify-center items-center relative">
+    // 用 my-auto 做垂直居中（而不是 items-center）：内容比屏幕高时不会把顶部挤出可视区
+    (<main className="safe-bottom relative flex min-h-[100dvh] w-full justify-center px-4 pb-12 pt-16 sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">
       <Toaster />
-      <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
+      <div className="safe-top-right absolute right-3 top-3 z-10 flex items-center gap-1.5 sm:right-6 sm:top-6">
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
           title={t("settingsTitle")}
           aria-label={t("settingsTitle")}
           className={
-            "flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white/80 shadow-sm backdrop-blur transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900/70 dark:hover:bg-gray-800 " +
+            "flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white/80 shadow-sm backdrop-blur transition-colors hover:bg-gray-100 sm:h-8 sm:w-8 dark:border-gray-700 dark:bg-gray-900/70 dark:hover:bg-gray-800 " +
             (hasKey ? "text-orange-500" : "text-gray-500")
           }>
-          <SettingsIcon className="h-3.5 w-3.5" />
+          <SettingsIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
         </button>
         <LanguageSwitch />
       </div>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <div className="container flex flex-col items-center justify-center">
-        <div className="space-y-1.5 text-center mb-6">
-          <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl">📥<br/>Markdown<b>Down</b></h1>
+      <div className="my-auto flex w-full flex-col items-center">
+        <div className="mb-8 space-y-2.5 text-center sm:mb-12 sm:space-y-3">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">📥<br/>Markdown<b>Down</b></h1>
           <p
-            className="max-w-[520px] text-sm text-gray-500 dark:text-gray-400">
+            className="mx-auto max-w-[560px] text-sm leading-relaxed text-gray-500 dark:text-gray-400 sm:text-base">
             {t("subtitle")}<br/> {t("subtitle2")}
           </p>
         </div>
-        <div className="w-full max-w-xs space-y-2">
-          <div className={`flex w-full max-w-xs items-center space-x-2 ${pasteMode ? "mb-3" : "mb-6"}`}>
+        <div className="w-full max-w-md space-y-4 sm:max-w-xl sm:space-y-6 lg:max-w-2xl">
+          <div className="flex w-full flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
             <div className="relative flex-1">
-              <Input id="md-src-url" value={url} type="text" placeholder={t("urlPlaceholder")} className={url ? "pr-8" : ""} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
+              <Input id="md-src-url" value={url} type="text" placeholder={t("urlPlaceholder")} className={`h-12 pr-9 text-base sm:h-11 sm:text-sm`} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
                 if (e.key === "Enter"){
                   submit()
                 }
@@ -336,91 +336,93 @@ export function Homepage() {
                   aria-label={t("clearInput")}
                   title={t("clearInput")}
                   onClick={() => setUrl("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 sm:h-5 sm:w-5 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                 </button>
               )}
             </div>
-            <Button disabled={isLoading} type="submit" onClick={submit}>
+            <Button disabled={isLoading} type="submit" onClick={submit} className="h-12 w-full px-6 text-base sm:h-11 sm:w-auto sm:text-sm">
               {isLoading ? t("converting") : t("convert")}
             </Button>
           </div>
           {pasteMode && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 pb-2">
+            <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400 sm:text-sm">
               {t("pasteModeNote")}
             </p>
           )}          
-          <div className="space-y-2 flex flex-col gap-3">
+          <div className="flex flex-col gap-4 sm:gap-6">
             <Card className="shadow-sm">
-              <CardHeader className="space-y-1 p-3.5 pb-2">
-                <CardTitle className="text-sm font-semibold">{t("options")}</CardTitle>
+              <CardHeader className="space-y-1 p-4 pb-2.5 sm:p-6 sm:pb-3">
+                <CardTitle className="text-sm font-semibold sm:text-base">{t("options")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-3.5 pt-0">
-              <div className="flex items-center space-x-2">
-              <Checkbox id="remove-noncontent" checked={removeNonContent} onClick={t=>setRemoveNonContent(!removeNonContent)} />
-              <label className="text-sm leading-none" htmlFor="remove-noncontent">
+              <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2 sm:gap-x-8 sm:gap-y-4">
+              <div className="flex items-center gap-2.5">
+              <Checkbox id="remove-noncontent" className="h-5 w-5 sm:h-4 sm:w-4" checked={removeNonContent} onClick={t=>setRemoveNonContent(!removeNonContent)} />
+              <label className="text-sm leading-snug sm:text-[15px]" htmlFor="remove-noncontent">
                 {t("removeNonContent")}
                 <HelpTooltip>
                   {t("removeNonContentHelp")}
                 </HelpTooltip>
               </label>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="remove-images" checked={downloadImages} onClick={t=>setDownloadImages(!downloadImages)} />
-              <label className="text-sm leading-none" htmlFor="remove-images">
+            <div className="flex items-center gap-2.5">
+              <Checkbox id="remove-images" className="h-5 w-5 sm:h-4 sm:w-4" checked={downloadImages} onClick={t=>setDownloadImages(!downloadImages)} />
+              <label className="text-sm leading-snug sm:text-[15px]" htmlFor="remove-images">
                 {t("downloadImages")}
                 <HelpTooltip>
                   {t("downloadImagesHelp")}
                 </HelpTooltip>
               </label>
             </div>
-            <div className="flex items-center space-x-2">
-            <Checkbox id="apply-gpt" checked={gptEnabled} onClick={t=>{
+            <div className="flex items-center gap-2.5">
+            <Checkbox id="apply-gpt" className="h-5 w-5 sm:h-4 sm:w-4" checked={gptEnabled} onClick={t=>{
               const newValue = !gptEnabled;
               if (!newValue){
                 setApplyGpt("")
               }
               setGptEnabled(newValue);
               }} />
-              <Label className="text-sm leading-none ml-2" htmlFor="apply-gpt">
+              <Label className="text-sm leading-snug sm:text-[15px]" htmlFor="apply-gpt">
                 {t("applyGpt")}
                 <HelpTooltip>
                   {t("applyGptHelp")}
                 </HelpTooltip>
               </Label>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="paste-mode" checked={pasteMode} onClick={()=>setPasteMode(!pasteMode)} />
-              <Label className="text-sm leading-none ml-2" htmlFor="paste-mode">
+            <div className="flex items-center gap-2.5">
+              <Checkbox id="paste-mode" className="h-5 w-5 sm:h-4 sm:w-4" checked={pasteMode} onClick={()=>setPasteMode(!pasteMode)} />
+              <Label className="text-sm leading-snug sm:text-[15px]" htmlFor="paste-mode">
                 {t("pasteMode")}
                 <HelpTooltip>
                   {t("pasteModeHelp")}
                 </HelpTooltip>
               </Label>
             </div>
+              </div>
               </CardContent>
             </Card>
 
             {pasteMode && (
               <Card className="shadow-sm">
-                <CardHeader className="space-y-1 p-3.5 pb-2">
-                  <CardTitle className="text-sm font-semibold">{t("pasteCardTitle")}</CardTitle>
+                <CardHeader className="space-y-1 p-4 pb-2.5 sm:p-6 sm:pb-3">
+                  <CardTitle className="text-sm font-semibold sm:text-base">{t("pasteCardTitle")}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3.5 pt-0">
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+                  <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-[15px]">
                     {t("pasteCardDesc")}
                   </p>
                   {/* 上传本地网页文件：手机浏览器"保存网页"后选文件即可，最稳、不依赖书签 */}
-                  <div className="mb-3">
-                    <label className="text-sm leading-none mb-1 block">
+                  <div className="mb-4">
+                    <label className="mb-1.5 block text-sm leading-none">
                       {t("uploadHtmlLabel")}
                     </label>
                     <input
                       id="html-file"
                       type="file"
                       accept=".html,.htm,.txt,text/html,text/plain"
-                      className="block w-full text-sm text-gray-600 dark:text-gray-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700 dark:file:bg-zinc-100 dark:file:text-zinc-900"
+                      className="block w-full py-1 text-sm text-gray-600 dark:text-gray-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700 dark:file:bg-zinc-100 dark:file:text-zinc-900"
                       onChange={async (e)=>{
                         const f = e.target.files && e.target.files[0];
                         if (!f) return;
@@ -442,14 +444,14 @@ export function Homepage() {
                   </div>
                   <Textarea
                     id="pasted-html"
-                    className="min-h-[10rem] font-mono text-xs"
+                    className="min-h-[9rem] font-mono text-xs sm:min-h-[12rem] sm:text-sm"
                     placeholder={t("pastePlaceholder")}
                     value={pastedHtml}
                     onChange={val=>setPastedHtml(val.target.value)}
                   />
-                  <div className="flex items-center gap-2 mt-3">
-                    <Input value={url} type="text" placeholder={`${t("urlPlaceholder")}（可选）`} onChange={val=>setUrl(val.target.value)} />
-                    <Button disabled={isLoading} type="button" onClick={submitPasted}>
+                  <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+                    <Input value={url} type="text" placeholder={`${t("urlPlaceholder")}（可选）`} className="h-12 text-base sm:h-11 sm:text-sm" onChange={val=>setUrl(val.target.value)} />
+                    <Button disabled={isLoading} type="button" onClick={submitPasted} className="h-12 w-full px-6 text-base sm:h-11 sm:w-auto sm:text-sm">
                       {isLoading ? t("converting") : t("convert")}
                     </Button>
                   </div>
@@ -458,54 +460,52 @@ export function Homepage() {
             )}
             {downloadImages && (
               <Card className="shadow-sm">
-              <CardHeader className="space-y-1 p-3.5 pb-2">
-                <CardTitle className="text-sm font-semibold">{t("imageOptions")}</CardTitle>
+              <CardHeader className="space-y-1 p-4 pb-2.5 sm:p-6 sm:pb-3">
+                <CardTitle className="text-sm font-semibold sm:text-base">{t("imageOptions")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-3.5 pt-0">
-              <>
+              <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
               <div className="space-y-2">
-              <Label className="text-sm leading-none" htmlFor="images-folder">
+              <Label className="text-sm leading-snug" htmlFor="images-folder">
                 {t("overrideImagesFolder")}
                 <HelpTooltip>
                   {t("overrideImagesFolderHelp")}
                 </HelpTooltip>
               </Label>
-              <Input id="images-folder" placeholder={t("enterFolderName")} type="text" value={imagesDir} onChange={val=>{
+              <Input id="images-folder" placeholder={t("enterFolderName")} type="text" value={imagesDir} className="h-12 text-base sm:h-11 sm:text-sm" onChange={val=>{
                 setImagesDir(val.target.value)
               }} />
               
             </div>
             <div className="space-y-2">
-              <Label className="text-sm leading-none" htmlFor="images-basepath">
+              <Label className="text-sm leading-snug" htmlFor="images-basepath">
                 {t("overrideBasePath")}
                 <HelpTooltip>
                   {t("overrideBasePathHelp")}
                 </HelpTooltip>
               </Label>
-              <Input id="images-basepath" placeholder={`./${imagesDir}`} type="text" value={imagesBasePathOverride} onChange={val=>{
+              <Input id="images-basepath" placeholder={`./${imagesDir}`} type="text" value={imagesBasePathOverride} className="h-12 text-base sm:h-11 sm:text-sm" onChange={val=>{
                 SetImagesBasePathOverride(val.target.value)
               }} />
               </div>
-              </>
+              </div>
               </CardContent>
             </Card>
             )}
  {gptEnabled && <Card className="shadow-sm">
-              <CardHeader className="space-y-1 p-3.5 pb-2">
-                <CardTitle className="text-sm font-semibold">{t("gptOptions")}</CardTitle>
+              <CardHeader className="space-y-1 p-4 pb-2.5 sm:p-6 sm:pb-3">
+                <CardTitle className="text-sm font-semibold sm:text-base">{t("gptOptions")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-3.5 pt-0">
-            <div className="space-y-2">
-            
-              
-                <div className="flex items-center space-x-2">
-                <Checkbox id="big-model" checked={bigModel} onClick={t=>setBigModel(!bigModel)} />
-                <label className="text-sm leading-none" htmlFor="big-model">
+              <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="space-y-4">
+                <div className="flex items-center gap-2.5">
+                <Checkbox id="big-model" className="h-5 w-5 sm:h-4 sm:w-4" checked={bigModel} onClick={t=>setBigModel(!bigModel)} />
+                <label className="text-sm leading-snug sm:text-[15px]" htmlFor="big-model">
                   {t("useGpt4")}
                 </label>
               </div>
               <Textarea id="apply-gpt-txt" 
-              className="min-h-[20rem]"
+              className="min-h-[12rem] text-base sm:min-h-[18rem] sm:text-sm"
               placeholder={t("gptPlaceholder")} value={applyGpt} onChange={val=>{ 
                 setApplyGpt(val.target.value)
               }} />
@@ -516,7 +516,7 @@ export function Homepage() {
           </div>
           
         </div>
-        <footer className="mt-6 text-[11px] text-gray-500 dark:text-gray-400">
+        <footer className="mt-10 text-[11px] text-gray-500 dark:text-gray-400 sm:mt-14 sm:text-xs">
           <p>
           © {new Date().getFullYear()}&nbsp;
             <a className="underline" href="https://github.com/ZhuangRenyang" target="_blank" rel="noopener noreferrer">

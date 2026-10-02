@@ -16,6 +16,11 @@
   }
 }
 
+html {
+  /* 手机横竖屏切换时字体不会突然被放大 */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -24,6 +29,29 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  /* 长 URL / 长英文不会把整页撑出横向滚动条 */
+  overflow-x: hidden;
+}
+
+/* iOS Safari：输入框字号小于 16px 时聚焦会自动放大整页，
+   强制移动端输入控件用 16px，避免"点一下页面就跳"的体验问题 */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* 顶部按钮避开 iPhone 刘海 / 灵动岛（配合 viewport-fit=cover） */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-top-right {
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 @layer utilities {
