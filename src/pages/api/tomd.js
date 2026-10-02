@@ -5,8 +5,6 @@ import path from "path";
 import os from "os";
 import fs from "fs";
 import archiver from "archiver";
-import { decryptCookie } from "@/lib/cookieVault";
-import { getServerCookie } from "@/lib/serverCookie";
 
 // 轻量 SSRF 防护：挡掉内网 / 保留地址与非常规协议。
 // 注：只校验 hostname 字面量，未做 DNS 解析后二次校验（防 DNS 重绑需要解析 + 比对 IP，
@@ -35,26 +33,9 @@ function isBlockedUrl(target) {
   return false;
 }
 
-// 把前端传入的 Cookie / 自定义请求头整理成 fetch 可用的 headers 对象。
-// 仅用于本次抓取请求，不写入日志、不落服务器。
-function buildCustomHeaders(cookie, customHeaders) {
-  const h = {};
-  if (cookie && typeof cookie === 'string' && cookie.trim()) {
-    h['cookie'] = cookie.trim();
-  }
-  if (customHeaders && typeof customHeaders === 'object') {
-    for (const [k, v] of Object.entries(customHeaders)) {
-      if (typeof v === 'string' && v.trim()) {
-        h[String(k).toLowerCase()] = v.trim();
-      }
-    }
-  }
-  return h;
-}
-
 export default async function handler(req, res) {
   // get params from body
-  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel, cookie, customHeaders, restoreToken, fetchProvider } = req.body;
+  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel, fetchProvider } = req.body;
 
   if (!url || typeof url !== 'string') {
     // 注意：必须 return，否则会拿着空 url 继续往下跑
@@ -81,25 +62,6 @@ export default async function handler(req, res) {
   if (aiConfig.baseURL && isBlockedUrl(aiConfig.baseURL)) {
     return res.status(400).send("Base URL 不被允许 / Base URL not allowed");
   }
-
-  // 反爬站点（如 CSDN）需要登录态，按优先级取凭据：
-  // 1) 用户本次请求明文带的 cookie；2)「恢复链接」token 解密；3) 服务端内存（管理员页 /admin-cookie）；4) Vercel 环境变量 CSDN_COOKIE（持久）
-  if ((!cookie || !cookie.trim()) && restoreToken) {
-    try {
-      cookie = decryptCookie(restoreToken);
-    } catch (e) {
-      return res.status(400).send("恢复凭据无效 / Invalid restore token");
-    }
-  }
-  if (!cookie || !cookie.trim()) {
-    const srv = getServerCookie();
-    if (srv) cookie = srv;
-  }
-  if (!cookie || !cookie.trim()) {
-    const envCookie = process.env.CSDN_COOKIE;
-    if (envCookie && envCookie.trim()) cookie = envCookie.trim();
-  }
-  const headersForFetch = buildCustomHeaders(cookie, customHeaders);
 
   // 用户在前端「设置」里选的抓取服务 + 自己的 key。
   // 只允许白名单内的 provider，避免被拿去做任意请求；key 仅本次使用，不落服务器。
@@ -145,7 +107,6 @@ export default async function handler(req, res) {
       applyGpt,
       bigModel === true,
       aiConfig,
-      headersForFetch,
       providerConfig
     );
 
