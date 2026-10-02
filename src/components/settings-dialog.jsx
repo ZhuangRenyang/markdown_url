@@ -262,16 +262,35 @@ export function SettingsDialog({ open, onClose }) {
                   type="button"
                   onClick={() => setFetchProvider(p.id)}
                   className={
-                    "rounded-lg px-3 py-1.5 text-xs transition-colors " +
+                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors " +
                     (fetchProvider === p.id
                       ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
                   }>
-                  {lang === "zh" ? p.labelZh : p.labelEn}
+                  <span>{lang === "zh" ? p.labelZh : p.labelEn}</span>
+                  <span
+                    className={
+                      "rounded px-1 py-0.5 text-[10px] leading-none " +
+                      (p.free
+                        ? fetchProvider === p.id
+                          ? "bg-white/25 text-white"
+                          : "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
+                        : fetchProvider === p.id
+                          ? "bg-white/25 text-white"
+                          : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400")
+                    }>
+                    {lang === "zh" ? p.freeZh : p.freeEn}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
+
+          {fetchProvider === "auto" && (
+            <p className="rounded-lg bg-green-50 px-3 py-2 text-xs text-green-700 dark:bg-green-950/40 dark:text-green-300">
+              ✓ {t("fetchAutoHelp")}
+            </p>
+          )}
 
           {activeFetchPreset.keyField ? (
             <div>
@@ -300,11 +319,16 @@ export function SettingsDialog({ open, onClose }) {
                 {t("fetchKeyHelp")}
               </p>
             </div>
-          ) : (
-            <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-800/60 dark:text-gray-300">
-              {t("fetchAutoHelp")}
-            </p>
-          )}
+          ) : null}
+
+          {fetchProvider !== "auto" &&
+            activeFetchPreset.keyField &&
+            !fetchKeys[activeFetchPreset.keyField] &&
+            !activeFetchPreset.free && (
+              <p className="rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+                ⚠ {t("fetchNeedKey")}
+              </p>
+            )}
 
           <div className="flex gap-2 pt-1">
             <Button
