@@ -181,13 +181,33 @@ async function fetchTextWithTimeout(endpoint, headers, timeoutMs){
   }
 }
 
+// 带重试的版本：免费服务（尤其 Jina）首次请求常因冷启动/限速失败，
+// 多试一次能显著提高成功率。只在「拿不到东西」时重试，HTTP 4xx 这类硬失败不重试。
+async function fetchTextWithRetry(endpoint, headers, timeoutMs, attempts = 2){
+  for (let i = 1; i <= attempts; i++) {
+    const raw = await fetchTextWithTimeout(endpoint, headers, timeoutMs);
+    if (raw) return raw;
+    if (i < attempts) {
+      console.log(`[fetch] 第 ${i} 次无结果，稍后重试...`);
+      await new Promise((r) => setTimeout(r, 800));
+    }
+  }
+  return null;
+}
+
 // 1) Jina Reader（免费，无 key 也能用；有 key 额度更高）
+// 这是「自动」模式下的默认免费兜底，所以额外做一次重试。
 async function fetchMarkdownViaJina(url, userKey){
   if ((process.env.JINA_READER || '').toLowerCase() === 'off') return null;
   const headers = { 'accept': 'text/plain' };
   const key = userKey || process.env.JINA_API_KEY;
   if (key) headers['authorization'] = 'Bearer ' + key;
-  const raw = await fetchTextWithTimeout('https://r.jina.ai/' + url, headers, Number(process.env.JINA_TIMEOUT_MS || 30000));
+  const raw = await fetchTextWithRetry(
+    'https://r.jina.ai/' + url,
+    headers,
+    Number(process.env.JINA_TIMEOUT_MS || 30000),
+    2
+  );
   const md = validThirdPartyMarkdown(raw);
   if (md) console.log(`[jina] 成功，正文 ${md.length} 字符`);
   return md;
@@ -198,7 +218,7 @@ async function fetchMarkdownViaScraperAPI(url, userKey){
   const key = userKey || process.env.SCRAPERAPI_KEY;
   if (!key || key.toLowerCase() === 'off') return null;
   const endpoint = `https://api.scraperapi.com/?api_key=${encodeURIComponent(key)}&url=${encodeURIComponent(url)}`;
-  const raw = await fetchTextWithTimeout(endpoint, {}, Number(process.env.SCRAPERAPI_TIMEOUT_MS || 40000));
+  const raw = await fetchTextWithRetry(endpoint, {}, Number(process.env.SCRAPERAPI_TIMEOUT_MS || 40000), 2);
   if (!raw) return null;
   // 该服务返回 HTML，用本地逻辑转 MD
   try {
@@ -217,7 +237,7 @@ async function fetchMarkdownViaScrapingAnt(url, userKey){
   const key = userKey || process.env.SCRAPINGANT_KEY;
   if (!key || key.toLowerCase() === 'off') return null;
   const endpoint = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${encodeURIComponent(key)}`;
-  const raw = await fetchTextWithTimeout(endpoint, {}, Number(process.env.SCRAPINGANT_TIMEOUT_MS || 40000));
+  const raw = await fetchTextWithRetry(endpoint, {}, Number(process.env.SCRAPINGANT_TIMEOUT_MS || 40000), 2);
   if (!raw) return null;
   try {
     const md = htmlToMarkdown(raw, url, true);
@@ -235,6 +255,8 @@ const PROVIDER_MAP = {
   scraperapi: fetchMarkdownViaScraperAPI,
   scrapingant: fetchMarkdownViaScrapingAnt,
 };
+// auto 模式的尝试顺序：免费且无需 key 的 Jina 排第一，保证「默认免费、开箱即用」。
+// 后两个需要部署方配了 key 或用户自带 key 才真正生效，否则会立刻跳过。
 const PROVIDER_ORDER = ['jina', 'scraperapi', 'scrapingant'];
 
 // 抓取服务调度：
