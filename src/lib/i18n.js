@@ -10,7 +10,6 @@ export const SUPPORTED_LANGUAGES = [
 
 const zh = {
   langName: "中文",
-  switchTo: "English",
 
   title: "MarkdownDown",
   subtitle: "把任意网页转成干净的 Markdown",
@@ -116,13 +115,10 @@ const zh = {
   needApiKeyTitle: "缺少 API 密钥",
   needApiKeyDesc:
     "勾选了「用 AI 处理 Markdown」，但还没配置密钥。请在设置里填写 API 密钥后再试。",
-
-  footerMadeBy: "由",
 };
 
 const en = {
   langName: "English",
-  switchTo: "中文",
 
   title: "MarkdownDown",
   subtitle: "Convert any webpage to a clean markdown",
@@ -231,8 +227,6 @@ const en = {
   needApiKeyTitle: "Missing API key",
   needApiKeyDesc:
     "You enabled AI processing but no key is configured. Add an API key in settings first.",
-
-  footerMadeBy: "Made by",
 };
 
 export const dictionaries = { zh, en };
