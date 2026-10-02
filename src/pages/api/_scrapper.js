@@ -149,7 +149,9 @@ export function htmlToMarkdown(data, url, removeNonContent){
 
 // ================= 第三方抓取兜底服务链 =================
 // 服务端直抓被反爬拦（CSDN 521 / 知乎 403）或 SPA 拿不到正文时，依次尝试下列服务。
-// 全部通过环境变量控制，不填 key 的服务自动跳过；关闭某个服务可设 <NAME>=off。
+// key 的来源优先级：① 用户在前端设置里填的（随请求传来）② 服务端环境变量（部署方兜底）。
+// 用户选了具体某个服务时，就只用那一个；选 auto 才按顺序全试一遍。
+// 关闭某个服务可设环境变量 <NAME>=off。
 
 // 通用：把第三方返回的文本当 Markdown 校验（长度 + 反爬页）
 function validThirdPartyMarkdown(md){
@@ -179,20 +181,21 @@ async function fetchTextWithTimeout(endpoint, headers, timeoutMs){
   }
 }
 
-// 1) Jina Reader（免费，无需 key）
-async function fetchMarkdownViaJina(url){
+// 1) Jina Reader（免费，无 key 也能用；有 key 额度更高）
+async function fetchMarkdownViaJina(url, userKey){
   if ((process.env.JINA_READER || '').toLowerCase() === 'off') return null;
   const headers = { 'accept': 'text/plain' };
-  if (process.env.JINA_API_KEY) headers['authorization'] = 'Bearer ' + process.env.JINA_API_KEY;
+  const key = userKey || process.env.JINA_API_KEY;
+  if (key) headers['authorization'] = 'Bearer ' + key;
   const raw = await fetchTextWithTimeout('https://r.jina.ai/' + url, headers, Number(process.env.JINA_TIMEOUT_MS || 30000));
   const md = validThirdPartyMarkdown(raw);
   if (md) console.log(`[jina] 成功，正文 ${md.length} 字符`);
   return md;
 }
 
-// 2) ScraperAPI（免费 5000/月，需 SCRAPERAPI_KEY）
-async function fetchMarkdownViaScraperAPI(url){
-  const key = process.env.SCRAPERAPI_KEY;
+// 2) ScraperAPI（免费 5000/月，需 key）
+async function fetchMarkdownViaScraperAPI(url, userKey){
+  const key = userKey || process.env.SCRAPERAPI_KEY;
   if (!key || key.toLowerCase() === 'off') return null;
   const endpoint = `https://api.scraperapi.com/?api_key=${encodeURIComponent(key)}&url=${encodeURIComponent(url)}`;
   const raw = await fetchTextWithTimeout(endpoint, {}, Number(process.env.SCRAPERAPI_TIMEOUT_MS || 40000));
@@ -209,9 +212,9 @@ async function fetchMarkdownViaScraperAPI(url){
   }
 }
 
-// 3) ScrapingAnt（免费 10000/月，需 SCRAPINGANT_KEY）
-async function fetchMarkdownViaScrapingAnt(url){
-  const key = process.env.SCRAPINGANT_KEY;
+// 3) ScrapingAnt（免费 10000/月，需 key）
+async function fetchMarkdownViaScrapingAnt(url, userKey){
+  const key = userKey || process.env.SCRAPINGANT_KEY;
   if (!key || key.toLowerCase() === 'off') return null;
   const endpoint = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${encodeURIComponent(key)}`;
   const raw = await fetchTextWithTimeout(endpoint, {}, Number(process.env.SCRAPINGANT_TIMEOUT_MS || 40000));
@@ -227,17 +230,29 @@ async function fetchMarkdownViaScrapingAnt(url){
   }
 }
 
-// 依次尝试所有兜底服务，返回第一个成功的 Markdown；全失败返回 null
-async function fetchMarkdownViaFallbacks(url){
-  const providers = [
-    ['jina', fetchMarkdownViaJina],
-    ['scraperapi', fetchMarkdownViaScraperAPI],
-    ['scrapingant', fetchMarkdownViaScrapingAnt],
-  ];
-  for (const [name, fn] of providers) {
+const PROVIDER_MAP = {
+  jina: fetchMarkdownViaJina,
+  scraperapi: fetchMarkdownViaScraperAPI,
+  scrapingant: fetchMarkdownViaScrapingAnt,
+};
+const PROVIDER_ORDER = ['jina', 'scraperapi', 'scrapingant'];
+
+// 抓取服务调度：
+// - providerConfig.provider 指定了某个服务 → 只用它（用户自带的 key 优先）
+// - auto / 未指定 → 按顺序把所有可用的服务试一遍，谁先成功用谁
+// 返回第一个成功的 Markdown；全失败返回 null
+async function fetchMarkdownViaFallbacks(url, providerConfig){
+  const wanted = providerConfig && providerConfig.provider;
+  const userKey = (providerConfig && providerConfig.key) || '';
+
+  const list = (wanted && wanted !== 'auto' && PROVIDER_MAP[wanted])
+    ? [[wanted, PROVIDER_MAP[wanted]]]
+    : PROVIDER_ORDER.map((name) => [name, PROVIDER_MAP[name]]);
+
+  for (const [name, fn] of list) {
     try {
       console.log(`[fallback] 尝试 ${name} ...`);
-      const md = await fn(url);
+      const md = await fn(url, userKey);
       if (md) return md;
     } catch (e) {
       console.log(`[fallback] ${name} 异常:`, e && e.message ? e.message : e);
@@ -247,7 +262,7 @@ async function fetchMarkdownViaFallbacks(url){
 }
 
 // Define the function using ES6 arrow function syntax
-const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}, customHeaders = {}) => {
+const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}, customHeaders = {}, providerConfig = {}) => {
   try {
     let markdown;
 
@@ -263,29 +278,29 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
       markdown = htmlToMarkdown(data, url, removeNonContent);
       console.log(`[plain] 成功，正文 ${markdown.length} 字符`);
     } catch (e) {
-      // 直抓失败（反爬 5xx/403、SPA 空壳等）→ 自动走第三方兜底服务链再试
-      console.log(`[plain] 失败：${e.message}，尝试第三方兜底...`);
-      const fbMd = await fetchMarkdownViaFallbacks(url);
+      // 直抓失败（反爬 5xx/403、SPA 空壳等）→ 自动走第三方抓取服务再试
+      console.log(`[plain] 失败：${e.message}，尝试第三方服务...`);
+      const fbMd = await fetchMarkdownViaFallbacks(url, providerConfig);
       if (fbMd) {
         markdown = fbMd;
       } else {
         throw new Error(
           `抓取失败：${e.message}。` +
-          '该网页可能需要 JS 渲染或拒绝了请求。'
+          '该网页可能需要 JS 渲染或拒绝了请求。可到右上角「设置」里切换抓取服务并填入对应 API 密钥。'
         );
       }
     }
 
     if (markdown.trim().length < MIN_CONTENT_LENGTH){
-      // 直抓得到的正文太短也走兜底服务链（SPA 常见）
-      const fbMd = await fetchMarkdownViaFallbacks(url);
+      // 直抓得到的正文太短也走第三方服务（SPA 常见）
+      const fbMd = await fetchMarkdownViaFallbacks(url, providerConfig);
       if (fbMd) {
         markdown = fbMd;
       } else {
         throw new Error(
           '抓取到的正文太少（不足 ' + MIN_CONTENT_LENGTH + ' 字）。' +
           '该站点很可能是纯 JS 渲染（SPA），初始 HTML 里没有正文，普通 HTTP 请求拿不到。' +
-          '建议：①换贴该站的 AMP 版 / RSS / 原文链接；②若是你自己的站点，确认服务端有预渲染。'
+          '建议：①到「设置」里切换抓取服务并填密钥；②换贴该站的 AMP 版 / RSS / 原文链接。'
         );
       }
     }
