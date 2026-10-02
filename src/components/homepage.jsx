@@ -165,9 +165,10 @@ export function Homepage() {
   const { apiKey, baseUrl, model, hasKey } = useSettings()
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [url, setUrl] = useState("");
-  // 粘贴网页内容模式：手机上无法装书签时，直接在文章页复制正文/HTML 粘贴进来转换
+  // 粘贴网页内容 / 上传本地网页文件：手机上无法装书签时的兜底方案
   const [pasteMode, setPasteMode] = useState(false);
   const [pastedHtml, setPastedHtml] = useState("");
+  const [fileName, setFileName] = useState("");
   const [imagesDir, setImagesDir] = useState("images");
   const [downloadImages, setDownloadImages] = useState(false);
   const [removeNonContent, setRemoveNonContent] = useState(true);
@@ -457,6 +458,35 @@ export function Homepage() {
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                     {t("pasteCardDesc")}
                   </p>
+                  {/* 上传本地网页文件：手机浏览器"保存网页"后选文件即可，最稳、不依赖书签 */}
+                  <div className="mb-3">
+                    <label className="text-sm leading-none mb-1 block">
+                      {t("uploadHtmlLabel")}
+                    </label>
+                    <input
+                      id="html-file"
+                      type="file"
+                      accept=".html,.htm,.txt,text/html,text/plain"
+                      className="block w-full text-sm text-gray-600 dark:text-gray-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700 dark:file:bg-zinc-100 dark:file:text-zinc-900"
+                      onChange={async (e)=>{
+                        const f = e.target.files && e.target.files[0];
+                        if (!f) return;
+                        try {
+                          const text = await f.text();
+                          setPastedHtml(text);
+                          setFileName(f.name || "");
+                          toast({ title: t("fileLoadedTitle"), description: (f.name || "") + " · " + text.length + " 字" });
+                        } catch (err) {
+                          toast({ title: t("failedTitle"), description: String(err && err.message || err) });
+                        }
+                      }}
+                    />
+                    {fileName && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-all">
+                        {t("fileLoadedHint")}{fileName}
+                      </p>
+                    )}
+                  </div>
                   <Textarea
                     id="pasted-html"
                     className="min-h-[10rem] font-mono text-xs"

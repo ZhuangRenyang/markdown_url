@@ -245,3 +245,16 @@ git add . && git commit -m "..." && git push
     - 已在文章页手动点书签 → 直接抓当前页。
   - 修复语法错误：JSON.stringify 注入 API 地址、函数 toString 注入逻辑。
 - `src/lib/i18n.js`：`bookmarkletDesc` / `bookmarkletUsage` 更新为"一次点击全自动"说明。
+
+---
+
+## 第十阶段：粘贴卡片新增「上传本地网页文件」
+
+用户反馈书签在手机端仍不好用，倾向"下载网页 → 本地转换"。本阶段给「粘贴网页内容」卡片补上**文件上传**入口：手机浏览器"保存网页"后，直接选该 `.html` 文件即可转换，完全不依赖书签 / 弹窗 / 服务端抓取。
+
+### 改动
+- `src/components/homepage.jsx`
+  - 新增 state `fileName`；
+  - 「粘贴网页内容」卡片新增 `<input type="file" accept=".html,.htm,.txt">`：选中后读取文本填入粘贴框并提示已载入；
+  - 复用既有 `submitPasted()` 提交逻辑（同一套 HTML→Markdown 转换链路）。
+- `src/lib/i18n.js`：新增 `uploadHtmlLabel` / `fileLoadedTitle` / `fileLoadedHint` 中英文案。

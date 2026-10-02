@@ -51,6 +51,9 @@ const zh = {
   pasteCardDesc:
     "在目标文章页：长按选中正文 → 复制（若复制的是纯文字也可以）。回到本页粘贴到下面，点「转换」即可生成 Markdown。可在下方补充文章链接（可选，用于给图片补全地址）。",
   pastePlaceholder: "在这里粘贴文章正文 / 网页 HTML / 纯文字……",
+  uploadHtmlLabel: "或：上传本地网页文件（.html/.htm/.txt）",
+  fileLoadedTitle: "已载入文件",
+  fileLoadedHint: "已载入：",
   pasteModeNote: "已开启粘贴模式：请在下方粘贴内容后点「转换」，上方输入框可填文章链接（可选）。",  pasteEmptyTitle: "请先粘贴内容",
   pasteEmptyDesc: "把文章页复制的内容粘贴到上面的文本框再点转换。",
 
@@ -179,6 +182,9 @@ const en = {
   pasteCardDesc:
     "On the target article page, long-press to select the body and copy it (plain text is fine too). Paste it below and click Convert to get Markdown. Optionally add the article URL below so images get absolute paths.",
   pastePlaceholder: "Paste article text / page HTML / plain text here…",
+  uploadHtmlLabel: "Or: upload a saved web page file (.html/.htm/.txt)",
+  fileLoadedTitle: "File loaded",
+  fileLoadedHint: "Loaded: ",
   pasteModeNote: "Paste mode is on: paste your content below and click Convert. The field above takes the article URL (optional).",
   pasteEmptyTitle: "Nothing pasted yet",
   pasteEmptyDesc: "Paste the content you copied from the article page, then click Convert.",
