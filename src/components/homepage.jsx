@@ -291,33 +291,33 @@ export function Homepage() {
   }
 
   return (
-    (<main className="w-full min-h-[100vh] py-6 space-y-6 flex justify-center items-center relative">
+    (<main className="w-full min-h-[100vh] py-5 space-y-4 flex justify-center items-center relative">
       <Toaster />
-      <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+      <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
           title={t("settingsTitle")}
           aria-label={t("settingsTitle")}
           className={
-            "flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/80 shadow-sm backdrop-blur transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900/70 dark:hover:bg-gray-800 " +
+            "flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white/80 shadow-sm backdrop-blur transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900/70 dark:hover:bg-gray-800 " +
             (hasKey ? "text-orange-500" : "text-gray-500")
           }>
-          <SettingsIcon className="h-4 w-4" />
+          <SettingsIcon className="h-3.5 w-3.5" />
         </button>
         <LanguageSwitch />
       </div>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <div className="container flex flex-col items-center justify-center">
-        <div className="space-y-2 text-center mb-10">
-          <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">📥<br/>Markdown<b>Down</b></h1>
+        <div className="space-y-1.5 text-center mb-6">
+          <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl">📥<br/>Markdown<b>Down</b></h1>
           <p
-            className="max-w-[600px] text-gray-500 md:text-xl/relaxed dark:text-gray-400">
+            className="max-w-[520px] text-sm text-gray-500 dark:text-gray-400">
             {t("subtitle")}<br/> {t("subtitle2")}
           </p>
         </div>
-        <div className="w-full max-w-sm space-y-2">
-          <div className={`flex w-full max-w-sm items-center space-x-2 ${pasteMode ? "mb-4" : "mb-10"}`}>
+        <div className="w-full max-w-xs space-y-2">
+          <div className={`flex w-full max-w-xs items-center space-x-2 ${pasteMode ? "mb-3" : "mb-6"}`}>
             <Input id="md-src-url" value={url} type="text" placeholder={t("urlPlaceholder")} onChange={val=>setUrl(val.target.value)} onKeyDown={(e)=>{
               if (e.key === "Enter"){
                 submit()
@@ -332,12 +332,12 @@ export function Homepage() {
               {t("pasteModeNote")}
             </p>
           )}          
-          <div className="space-y-2 flex flex-col gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("options")}</CardTitle>
+          <div className="space-y-2 flex flex-col gap-3">
+            <Card className="shadow-sm">
+              <CardHeader className="space-y-1 p-3.5 pb-2">
+                <CardTitle className="text-sm font-semibold">{t("options")}</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3.5 pt-0">
               <div className="flex items-center space-x-2">
               <Checkbox id="remove-noncontent" checked={removeNonContent} onClick={t=>setRemoveNonContent(!removeNonContent)} />
               <label className="text-sm leading-none" htmlFor="remove-noncontent">
@@ -384,11 +384,11 @@ export function Homepage() {
             </Card>
 
             {pasteMode && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("pasteCardTitle")}</CardTitle>
+              <Card className="shadow-sm">
+                <CardHeader className="space-y-1 p-3.5 pb-2">
+                  <CardTitle className="text-sm font-semibold">{t("pasteCardTitle")}</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3.5 pt-0">
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                     {t("pasteCardDesc")}
                   </p>
@@ -438,11 +438,11 @@ export function Homepage() {
               </Card>
             )}
             {downloadImages && (
-              <Card>
-              <CardHeader>
-                <CardTitle>{t("imageOptions")}</CardTitle>
+              <Card className="shadow-sm">
+              <CardHeader className="space-y-1 p-3.5 pb-2">
+                <CardTitle className="text-sm font-semibold">{t("imageOptions")}</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3.5 pt-0">
               <>
               <div className="space-y-2">
               <Label className="text-sm leading-none" htmlFor="images-folder">
@@ -471,11 +471,11 @@ export function Homepage() {
               </CardContent>
             </Card>
             )}
- {gptEnabled && <Card>
-              <CardHeader>
-                <CardTitle>{t("gptOptions")}</CardTitle>
+ {gptEnabled && <Card className="shadow-sm">
+              <CardHeader className="space-y-1 p-3.5 pb-2">
+                <CardTitle className="text-sm font-semibold">{t("gptOptions")}</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3.5 pt-0">
             <div className="space-y-2">
             
               
@@ -497,7 +497,7 @@ export function Homepage() {
           </div>
           
         </div>
-        <footer className="mt-10 text-xs text-gray-500 dark:text-gray-400">
+        <footer className="mt-6 text-[11px] text-gray-500 dark:text-gray-400">
           <p>
           © {new Date().getFullYear()}&nbsp;
             <a className="underline" href="https://github.com/ZhuangRenyang" target="_blank" rel="noopener noreferrer">
