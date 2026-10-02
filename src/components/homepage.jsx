@@ -90,6 +90,8 @@ export function Homepage() {
   const [gptEnabled, setGptEnabled] = useState(false);
   const [applyGpt, setApplyGpt] = useState("");
   const [bigModel, setBigModel] = useState(false);
+  // 高级选项：反爬站点（如 CSDN）需要登录态才能抓取
+  const [cookie, setCookie] = useState("");
 
   const [md, setMd] = useState("");
 
@@ -101,7 +103,8 @@ export function Homepage() {
       imagesBasePathOverride,
       removeNonContent,
       applyGpt,
-      bigModel
+      bigModel,
+      cookie,
     }
     localStorage.setItem("settings", JSON.stringify(settings))
   }
@@ -119,6 +122,7 @@ export function Homepage() {
       setImagesDir(parsed.imagesDir)
       setDownloadImages(!!parsed.downloadImages)
       SetImagesBasePathOverride(parsed.imagesBasePathOverride)
+      setCookie(parsed.cookie || "")
     }
   }, [])
 
@@ -140,7 +144,8 @@ export function Homepage() {
       imagesBasePathOverride,
       removeNonContent,
       applyGpt,
-      bigModel
+      bigModel,
+      cookie,
     }
 
     // 用了 AI 处理却没填密钥，直接拦下来，别浪费一次转换
@@ -167,9 +172,15 @@ export function Homepage() {
     });
     // const resp = await fetch(fullUrl)
     if (!resp.ok){
+      // 把服务端返回的具体原因（如反爬验证页提示）显示出来，而不是笼统的「转换失败」
+      let reason = t("failedDesc");
+      try {
+        const txt = await resp.text();
+        if (txt) reason = txt;
+      } catch (e) { /* ignore */ }
       toast({
         title: t("failedTitle"),
-        description: t("failedDesc"),
+        description: reason,
       })
       track("Download Failed", payload)
     }
@@ -283,6 +294,35 @@ export function Homepage() {
                 </HelpTooltip>
               </Label>
             </div>
+              </CardContent>
+            </Card>
+
+            {/* 高级选项：反爬站点（如 CSDN）需要登录态才能抓取 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {t("advancedOptions")}
+                  <HelpTooltip>
+                    {t("advancedOptionsHelp")}
+                  </HelpTooltip>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label className="text-sm leading-none" htmlFor="cookie-input">
+                    {t("cookieLabel")}
+                    <HelpTooltip>
+                      {t("cookieHelp")}
+                    </HelpTooltip>
+                  </Label>
+                  <Textarea
+                    id="cookie-input"
+                    className="min-h-[6rem] font-mono text-xs"
+                    placeholder={t("cookiePlaceholder")}
+                    value={cookie}
+                    onChange={val => setCookie(val.target.value)}
+                  />
+                </div>
               </CardContent>
             </Card>
             

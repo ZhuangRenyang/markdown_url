@@ -33,9 +33,26 @@ function isBlockedUrl(target) {
   return false;
 }
 
+// 把前端传入的 Cookie / 自定义请求头整理成 fetch 可用的 headers 对象。
+// 仅用于本次抓取请求，不写入日志、不落服务器。
+function buildCustomHeaders(cookie, customHeaders) {
+  const h = {};
+  if (cookie && typeof cookie === 'string' && cookie.trim()) {
+    h['cookie'] = cookie.trim();
+  }
+  if (customHeaders && typeof customHeaders === 'object') {
+    for (const [k, v] of Object.entries(customHeaders)) {
+      if (typeof v === 'string' && v.trim()) {
+        h[String(k).toLowerCase()] = v.trim();
+      }
+    }
+  }
+  return h;
+}
+
 export default async function handler(req, res) {
   // get params from body
-  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel } = req.body;
+  let { url, downloadImages, imagesDir, imagesBasePathOverride, removeNonContent, applyGpt, bigModel, cookie, customHeaders } = req.body;
 
   if (!url || typeof url !== 'string') {
     // 注意：必须 return，否则会拿着空 url 继续往下跑
@@ -62,6 +79,9 @@ export default async function handler(req, res) {
   if (aiConfig.baseURL && isBlockedUrl(aiConfig.baseURL)) {
     return res.status(400).send("Base URL 不被允许 / Base URL not allowed");
   }
+
+  // 反爬站点（如 CSDN）需要登录态：把 Cookie / 自定义请求头透传给抓取请求
+  const headersForFetch = buildCustomHeaders(cookie, customHeaders);
 
   console.log(`Fetching ${url}`);
   // random tmp folder in tmp directory
@@ -94,7 +114,8 @@ export default async function handler(req, res) {
       removeNonContent === true,
       applyGpt,
       bigModel === true,
-      aiConfig
+      aiConfig,
+      headersForFetch
     );
 
     if (downloadImages === true){

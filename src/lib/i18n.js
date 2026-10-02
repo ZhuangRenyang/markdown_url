@@ -34,6 +34,15 @@ const zh = {
   applyGptHelp:
     "用自定义指令让 AI 进一步清洗或改写 Markdown 内容，比如在开头加摘要、删除所有链接、改标题层级（需要配置 OPENAI_API_KEY）。",
 
+  // 高级选项：反爬站点（如 CSDN）需要登录态才能抓取
+  advancedOptions: "高级选项",
+  advancedOptionsHelp:
+    "用于需要登录态的站点（如 CSDN）。登录后复制 Cookie 粘贴此处，即可绕过反爬验证页。",
+  cookieLabel: "自定义请求头 / Cookie",
+  cookiePlaceholder: "粘贴 Cookie，例如 uuid_tt_dd=...; token=...",
+  cookieHelp:
+    "仅本次请求使用，不会保存到服务器。Cookie 含登录凭证，请勿在公开设备填写。",
+
   imageOptions: "图片选项",
   overrideImagesFolder: "自定义图片文件夹名称",
   overrideImagesFolderHelp: "覆盖默认的图片文件夹名称（仅在「下载图片」时生效）。",
@@ -117,6 +126,15 @@ const en = {
   applyGpt: "Process Markdown with AI",
   applyGptHelp:
     "Use custom instructions to further clean up or transform the markdown with AI, e.g. add a summary, remove all links (requires OPENAI_API_KEY).",
+
+  // Advanced options: anti-bot sites (e.g. CSDN) need login state to fetch
+  advancedOptions: "Advanced",
+  advancedOptionsHelp:
+    "For sites that require login (e.g. CSDN). Paste the Cookie after logging in to bypass the anti-bot verification page.",
+  cookieLabel: "Custom headers / Cookie",
+  cookiePlaceholder: "Paste cookie, e.g. uuid_tt_dd=...; token=...",
+  cookieHelp:
+    "Used only for this request, never stored on the server. Contains login credentials — don't enter on shared devices.",
 
   imageOptions: "Image Options",
   overrideImagesFolder: "Override Images Folder Name",

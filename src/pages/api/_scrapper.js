@@ -20,7 +20,8 @@ const MIN_CONTENT_LENGTH = Number(process.env.MIN_CONTENT_LENGTH || 200);
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 // 普通 HTTP 请求：不消耗浏览器额度，速度快，但拿不到 JS 渲染后的内容
-async function fetchHtmlPlain(url){
+// customHeaders：用户在前端「高级选项」传入的 Cookie / 自定义请求头（用于绕过 CSDN 等反爬）
+async function fetchHtmlPlain(url, customHeaders = {}){
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -32,6 +33,7 @@ async function fetchHtmlPlain(url){
         'user-agent': BROWSER_UA,
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        ...customHeaders,
       },
     });
     if (!resp.ok){
@@ -45,6 +47,34 @@ async function fetchHtmlPlain(url){
   } finally {
     clearTimeout(timer);
   }
+}
+
+// 反爬验证页识别：CSDN、知乎等会返回「请进行安全验证」之类的人机验证页。
+// 此时服务端没有下发正文，必须带登录态（Cookie）才能拿到文章。
+function looksLikeAntiBotPage(html){
+  return /请进行安全验证|Security Verification|人机验证|访问验证|verify you are human|checking your browser/i.test(html);
+}
+
+// 站点模板优先识别：部分站点的「正文容器」有固定 class（如 VuePress 的 theme-default-content、
+// CSDN 的 content_views）。直接定位比交给 Readability 自动判断更稳，能避免把目录/侧边栏误判为正文。
+function extractMainContainer(document){
+  const candidates = [
+    'div.theme-default-content', // VuePress 文档站（如 pdai.tech）
+    'div#content_views',         // CSDN 新版博客正文
+    'div.blog-content-box',      // CSDN 旧版
+    'article',
+    'main',
+    '.post-content',
+    '.article-content',
+    '.markdown-body',
+  ];
+  for (const sel of candidates){
+    const el = document.querySelector(sel);
+    if (el && (el.textContent || '').trim().length > 200){
+      return el;
+    }
+  }
+  return null;
 }
 
 // 还原懒加载图片并解析成绝对地址，这样 Turndown 能抓到真实链接、_imgProcessor 也能下载。
@@ -101,6 +131,13 @@ function htmlToMarkdown(data, url, removeNonContent){
   if (!removeNonContent){
     return turndownService.turndown(doc.window.document.body.innerHTML);
   }
+  // 先尝试已知站点模板容器，命中就直接用它，避开 Readability 的误判
+  const container = extractMainContainer(doc.window.document);
+  if (container){
+    const title = doc.window.document.title || '';
+    return turndownService.turndown(`<h1>${title}</h1>${container.innerHTML}`);
+  }
+  // 回退到 Readability
   const reader = new Readability(doc.window.document);
   const article = reader.parse();
   if (!article){
@@ -110,12 +147,19 @@ function htmlToMarkdown(data, url, removeNonContent){
 }
 
 // Define the function using ES6 arrow function syntax
-const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}) => {
+const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}, customHeaders = {}) => {
   try {
     let markdown;
 
     try {
-      const data = await fetchHtmlPlain(url);
+      const data = await fetchHtmlPlain(url, customHeaders);
+      // 反爬验证页：明确报错，提示用户带登录 Cookie
+      if (looksLikeAntiBotPage(data)){
+        throw new Error(
+          '抓取到的页面是反爬验证页（如 CSDN 的「请进行安全验证」）。' +
+          '该站点拦截了无登录态的请求，请登录后在「高级选项」中粘贴 Cookie 再转换。'
+        );
+      }
       markdown = htmlToMarkdown(data, url, removeNonContent);
       console.log(`[plain] 成功，正文 ${markdown.length} 字符`);
     } catch (e) {
