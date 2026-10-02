@@ -6,6 +6,7 @@ import os from "os";
 import fs from "fs";
 import archiver from "archiver";
 import { decryptCookie } from "@/lib/cookieVault";
+import { getServerCookie } from "@/lib/serverCookie";
 
 // 轻量 SSRF 防护：挡掉内网 / 保留地址与非常规协议。
 // 注：只校验 hostname 字面量，未做 DNS 解析后二次校验（防 DNS 重绑需要解析 + 比对 IP，
@@ -81,13 +82,22 @@ export default async function handler(req, res) {
     return res.status(400).send("Base URL 不被允许 / Base URL not allowed");
   }
 
-  // 反爬站点（如 CSDN）需要登录态：优先用明文 cookie；否则尝试用「恢复链接」token 解密复用
+  // 反爬站点（如 CSDN）需要登录态，按优先级取凭据：
+  // 1) 用户本次请求明文带的 cookie；2)「恢复链接」token 解密；3) 服务端内存（管理员页 /admin-cookie）；4) Vercel 环境变量 CSDN_COOKIE（持久）
   if ((!cookie || !cookie.trim()) && restoreToken) {
     try {
       cookie = decryptCookie(restoreToken);
     } catch (e) {
       return res.status(400).send("恢复凭据无效 / Invalid restore token");
     }
+  }
+  if (!cookie || !cookie.trim()) {
+    const srv = getServerCookie();
+    if (srv) cookie = srv;
+  }
+  if (!cookie || !cookie.trim()) {
+    const envCookie = process.env.CSDN_COOKIE;
+    if (envCookie && envCookie.trim()) cookie = envCookie.trim();
   }
   const headersForFetch = buildCustomHeaders(cookie, customHeaders);
 

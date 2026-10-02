@@ -1,11 +1,17 @@
 // 无状态 Cookie 保险箱：把用户的 CSDN Cookie 加密成一个 token（恢复链接）。
 // 服务端不落盘、不存储任何会话，token 本身就是加密后的 Cookie 密文。
-// 密钥来自环境变量 COOKIE_VAULT_SECRET；未设置时退回内置 fallback（仅限本地开发，生产务必配置）。
+// 密钥优先级：环境变量 COOKIE_VAULT_SECRET（推荐，跨重启稳定）> 进程启动时随机生成（无需配置，
+// 但 Serverless 冷启动后旧恢复链接会失效，个人工具可接受）。
 import crypto from "crypto";
 
+let autoKey = null;
+
 function getKey() {
-  const secret = process.env.COOKIE_VAULT_SECRET || "dev-only-insecure-fallback-change-me";
-  return crypto.createHash("sha256").update(secret).digest();
+  const secret = process.env.COOKIE_VAULT_SECRET;
+  if (secret) return crypto.createHash("sha256").update(secret).digest();
+  // 未配置时用随机密钥，避免硬编码不安全兜底；同一进程内稳定，跨重启失效。
+  if (!autoKey) autoKey = crypto.randomBytes(32);
+  return autoKey;
 }
 
 // 加密：iv(12) + authTag(16) + ciphertext，整体 base64url 编码（URL 安全）
