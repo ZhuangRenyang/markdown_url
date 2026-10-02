@@ -135,6 +135,13 @@ const zh = {
   statusNotConfigured: "未配置",
   statusSaved: "已保存",
   testConnection: "测试连接",
+  fetchServiceTitle: "网页抓取服务",
+  fetchServiceDesc:
+    "遇到 CSDN、知乎等反爬站，或纯 JS 渲染的页面时，用第三方抓取服务来取正文。密钥只存在本地，随本次请求发给服务器用一次。",
+  fetchProvider: "抓取方式",
+  fetchKeyHelp: "到对应服务官网注册即可拿到密钥；留空则用服务端预设（若有）。",
+  fetchAutoHelp:
+    "自动模式：先服务端直抓，失败后依次尝试可用的第三方服务，无需填写密钥。",
   testing: "测试中...",
   testOk: "连接成功",
   testFail: "连接失败",
@@ -277,6 +284,13 @@ const en = {
   statusNotConfigured: "Not configured",
   statusSaved: "Saved",
   testConnection: "Test connection",
+  fetchServiceTitle: "Web scraping service",
+  fetchServiceDesc:
+    "For anti-bot sites (CSDN, Zhihu) or JS-rendered pages, fetch content via a third-party scraping service. The key stays local and is sent once per request.",
+  fetchProvider: "Fetch method",
+  fetchKeyHelp: "Sign up on the provider's site to get a key; leave empty to use the server default (if any).",
+  fetchAutoHelp:
+    "Auto: try a direct fetch first, then fall back through available providers. No key required.",
   testing: "Testing...",
   testOk: "Connected",
   testFail: "Failed",
