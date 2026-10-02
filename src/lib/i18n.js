@@ -58,14 +58,14 @@ const zh = {
   bookmarkletTitle: "书签工具",  bookmarkletHelp:
     "在已登录的文章页点一下书签即可转换，彻底免去复制 Cookie 和配置环境变量。适合 CSDN、知乎等反爬站点。",
   bookmarkletDesc:
-    "把下面的书签拖到浏览器收藏栏。转换时打开那篇文章（已登录），点一下书签即可生成 Markdown——无需懂 Cookie、无需配置任何变量。若在本工具页点书签，会自动帮你打开输入框里粘贴的文章链接。",
+    "把下面的书签拖到浏览器收藏栏（手机可长按链接→添加书签）。使用时：在本页粘贴文章链接 → 点书签，会自动打开文章并完成转换，Markdown 在新标签页弹出，可直接复制/下载。",
   bookmarkletDrag: "拖我到收藏栏 / 点我转换",
   bookmarkletDragHint: "把此链接拖到书签栏；或右键收藏。以后在文章页点它即可转换。",
   bookmarkletCopyBtn: "复制书签代码",
   bookmarkletCopied: "已复制书签代码",
   bookmarkletCopyFail: "复制失败，请手动复制上方链接。",
   bookmarkletUsage:
-    "用法：①把上面的「🔖」拖进收藏栏（手机可长按链接→添加书签）；②输入框粘贴文章链接后点书签，会自动打开文章页；③在文章页再点一次书签，即可在新标签页生成 Markdown，可复制或下载。",
+    "用法（全自动，点一次即可）：①把「🔖」拖进收藏栏（手机长按链接→添加书签）；②在输入框粘贴文章链接；③点书签——自动打开文章并转换，新标签页里可复制或下载 Markdown。（若已打开文章，直接点书签也能转。）",
 
   // Cookie 保险箱 / 恢复链接：填一次，手机免粘贴
   generateRestoreBtn: "生成恢复链接",
@@ -188,14 +188,14 @@ const en = {
   bookmarkletHelp:
     "One click on any logged-in article page converts it — no cookie copy, no env vars. Great for anti-bot sites like CSDN or Zhihu.",
   bookmarkletDesc:
-    "Drag the bookmarklet below to your bookmarks bar. Open the article (logged in) and click it to get Markdown — no cookie knowledge, no env config. If you click it on this tool page, it will open the article URL from the input box for you.",
+    "Drag the bookmarklet to your bookmarks bar (on mobile, long-press it to add). To use: paste the article URL here, then click the bookmark — it opens the article and converts automatically, showing Markdown in a new tab you can copy or download.",
   bookmarkletDrag: "Drag me to bookmarks / Click to convert",
   bookmarkletDragHint: "Drag this link to your bookmarks bar, or right-click to bookmark. Click it on any article page to convert.",
   bookmarkletCopyBtn: "Copy bookmarklet",
   bookmarkletCopied: "Bookmarklet copied",
   bookmarkletCopyFail: "Copy failed, please copy the link above manually.",
   bookmarkletUsage:
-    "How: ① drag the 🔖 into your bookmarks bar (on mobile, long-press the link → add bookmark); ② paste the article URL and click the bookmark — the article opens automatically; ③ click the bookmark again on the article page — Markdown opens in a new tab.",
+    "How (fully automatic, one click): ① drag the 🔖 into your bookmarks bar (long-press on mobile); ② paste the article URL; ③ click the bookmark — it opens the article and converts automatically; copy or download the Markdown in the new tab. (You can also just click it while already on an article page.)",
 
   // Cookie vault / restore link: set once, no paste on phone
   generateRestoreBtn: "Generate restore link",
