@@ -165,3 +165,47 @@ git add . && git commit -m "..." && git push
 ### 备注
 - 之前各阶段的 Cookie / 环境变量能力仍保留作兜底（少数不支持书签的场景可用），但**首选路径已是书签**。
 - 书签依赖目标站点允许用户脚本运行（绝大多数站点允许）；个别极严格 CSP 站点可能拦截，属极少数。
+
+---
+
+## 第五阶段：修复问号帮助气泡在手机上"点一下就消失"
+
+`HelpTooltip` 原先使用 Radix/shadcn 的 `Tooltip`，它在触屏上没有真正的 hover：一次 tap 会先后触发 `mouseenter`（打开）与 `mouseleave`（关闭），于是气泡一闪即逝，手机用户看不到内容。
+
+### 改动
+- `src/components/homepage.jsx`：`HelpTooltip` 改为自实现的受控浮层
+  - 桌面端（`pointerType === "mouse"`）：保留 hover 显隐；
+  - 触屏端：点击 `?` 开关气泡，点击浮层外部（`pointerdown` 落在气泡外）才关闭；
+  - 用 `pointerType` 区分鼠标 / 触摸，屏蔽触摸伪 hover 事件导致的瞬关；
+  - 移除对 `@/components/ui/tooltip` 的依赖。
+
+---
+
+## 第六阶段：修复书签报「Failed to fetch」
+
+用户反馈点书签后弹出 `转换出错：Failed to fetch`。经真实浏览器复现与对照实验确认：
+
+- 服务端 `/api/fromhtml`、CORS 预检（OPTIONS→204 带 `access-control-allow-origin: *`）、Cloudflare 均正常；
+- 错误根因：书签卡片里那个「接口地址」输入框被填成了 **文章地址**（如 `https://blog.csdn.net/...`）。书签会拿它当服务器地址，向 `blog.csdn.net/.../api/fromhtml` 发请求，跨域被拦 → `Failed to fetch`。
+- 对照：接口地址填错 → `Failed to fetch`；填 `https://md.cati.cc.cd` → `HTTP 200` 正常返回 Markdown。
+
+### 改动
+- `src/components/homepage.jsx`
+  - **移除**书签卡片的「接口地址」输入框；书签固定用 `window.location.origin` 自动生成，用户无需也无法误填。
+  - 书签脚本新增两道防护：
+    - 在本工具页面点击书签时（`location.host === 接口host`）直接提示「请到目标文章页点」并中止；
+    - fetch 失败时的报错附带「若是 Failed to fetch，通常是没在文章页点」的引导。
+- `src/lib/i18n.js`：`bookmarkletDesc` 中英文案补充「请在文章页点，不要在本工具页面点」。
+
+---
+
+## 第七阶段：书签在工具页点击时自动打开文章页（解决"点了没作用"）
+
+用户习惯在工具页粘贴 URL 后点书签，但书签必须在文章页才能抓正文，于是点下去只看到"请到文章页点"的提示，体感像"没作用"。
+
+### 改动
+- `src/components/homepage.jsx`
+  - 首页 URL 输入框加 `id="md-src-url"`；
+  - 书签脚本的守卫逻辑升级：当在工具页点击书签时，读取输入框里的链接，**自动在新标签打开该文章**，并提示"请在文章页再点一次书签"；若浏览器拦截弹窗则回退为当前标签跳转；输入框为空时给出粘贴引导。
+  - 用户操作变成：工具页粘贴 URL → 点书签（自动打开文章页）→ 在文章页再点一次书签 → 生成 Markdown。
+- `src/lib/i18n.js`：`bookmarkletDesc` / `bookmarkletUsage` 中英文案改为说明新行为（含手机"长按链接→添加书签"提示）。
