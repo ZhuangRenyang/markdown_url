@@ -162,6 +162,84 @@ function validThirdPartyMarkdown(md){
   return t;
 }
 
+// Jina Reader 会在正文前加一段「信封」元信息，例如：
+//   Title: xxx
+//   URL Source: https://...
+//   Published Time: 2025-03-12T17:42:27+08:00
+//   Markdown Content:
+//   <正文开始>
+// 这段不是文章内容，必须剥掉，否则会混进最终结果。
+function stripJinaEnvelope(md){
+  let t = String(md || '').replace(/^\uFEFF/, '');
+  // 只在前 40 行里找「Markdown Content:」这一行，找到就丢掉它及之前的所有内容
+  const lines = t.split('\n');
+  const limit = Math.min(lines.length, 40);
+  for (let i = 0; i < limit; i++){
+    if (/^\s*Markdown Content:\s*$/i.test(lines[i])){
+      return lines.slice(i + 1).join('\n').trim();
+    }
+  }
+  // 没有信封分隔行时，至少把开头的 Title:/URL Source:/Published Time: 逐行去掉
+  while (lines.length && /^\s*(Title:|URL Source:|Published Time:|Image \d+:)\s*/i.test(lines[0])){
+    lines.shift();
+  }
+  return lines.join('\n').trim();
+}
+
+// 已知站点的「正文容器」CSS 选择器。
+// 命中时交给 Jina 的 x-target-selector 直接锁定正文，比事后文本清洗可靠得多。
+function pickTargetSelector(url){
+  let host = '';
+  try { host = new URL(url).hostname.toLowerCase(); } catch { return null; }
+  if (host.endsWith('csdn.net')) return '#content_views';
+  if (host.endsWith('zhihu.com')) return '.RichText, .Post-RichTextContainer';
+  if (host.endsWith('juejin.cn')) return '#article-root, .article-viewer';
+  if (host.endsWith('cnblogs.com')) return '#cnblogs_post_body';
+  if (host.endsWith('segmentfault.com')) return '.article';
+  if (host.endsWith('jianshu.com')) return 'article';
+  if (host.endsWith('51cto.com')) return '.article-content, #content';
+  return null;
+}
+
+// 第三方服务（尤其 Jina）返回的是「整页」Markdown，可能包含导航栏、推荐阅读等噪音。
+// 这里做**保守**的文本级净化：只剔除「明确无疑」的噪音，绝不冒险裁剪正文。
+//
+// 教训：曾用「找尾部标记往前切」的激进做法，结果 CSDN 页面里 `版权声明` 出现在
+// 正文之前，导致正文被整段切掉（只剩 549 字符）。所以现在只做逐行级过滤，
+// 不做大段裁剪；正文定位交给 Jina 的 x-target-selector。
+export function refineThirdPartyMarkdown(md, url){
+  let t = stripJinaEnvelope(md);
+
+  const lines = t.split('\n');
+
+  // 只丢「整行就是站点导航/交互」的短行，且要求该行不含中文正文特征（较长的句子）
+  const NOISE_LINE = /^\s*(\[?搜索\]?|登录|注册|立即登录|消息|创作中心|创作|关注|点赞|踩|收藏|评论|分享|目录|扫码关注|微信公众号|客服|返回顶部|下载APP|毕业设计|作业解答|AI编程|提问|取消|确定|补充说明（选填）|登录后您可以|未登录|会员·新人礼包|最新推荐文章于|本内容遵循|小编推荐)\s*$/;
+
+  const kept = [];
+  for (const line of lines){
+    if (NOISE_LINE.test(line)) continue;
+    // 整行只由「本页自链接」构成 → 站点导航残留，丢弃
+    const onlySelfLinks = /^[\s*\-•·]*(\[[^\]]*\]\([^)]*\)[\s,·]*)+$/.test(line) &&
+      /blog\.csdn\.net\/[^)]*\/article\/details|csdnimg\.cn|csdn\.net\/vip|mall\.csdn\.net|g\.csdnimg\.cn|link\.csdn\.net|i\.csdn\.net|mp\.csdn\.net/i.test(line);
+    if (onlySelfLinks) continue;
+    kept.push(line);
+  }
+
+  const cleaned = kept.join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\s*\n+/, '')
+    .trim();
+
+  const result = validThirdPartyMarkdown(cleaned);
+  if (result){
+    console.log(`[refine] 净化：${String(md).length} → ${result.length} 字符`);
+    return result;
+  }
+  // 净化的结果太短说明误删了，退回只剥信封的版本
+  console.log('[refine] 净化后内容过少，退回未净化版本');
+  return stripJinaEnvelope(md);
+}
+
 // 用统一的超时 fetch 拉文本
 async function fetchTextWithTimeout(endpoint, headers, timeoutMs){
   const controller = new AbortController();
@@ -197,18 +275,38 @@ async function fetchTextWithRetry(endpoint, headers, timeoutMs, attempts = 2){
 
 // 1) Jina Reader（免费，无 key 也能用；有 key 额度更高）
 // 这是「自动」模式下的默认免费兜底，所以额外做一次重试。
+// Jina 默认会跑一遍它自己的 Readability 过滤，但对部分站点（如 CSDN）会失效，
+// 导航栏、推荐位仍会混进来。这里用 x-target-selector 显式指向已知的正文容器，
+// 用 x-remove-selector 先删掉明显噪音，再用 x-respond-with 保留它自己的过滤。
 async function fetchMarkdownViaJina(url, userKey){
   if ((process.env.JINA_READER || '').toLowerCase() === 'off') return null;
   const headers = { 'accept': 'text/plain' };
   const key = userKey || process.env.JINA_API_KEY;
   if (key) headers['authorization'] = 'Bearer ' + key;
+
+  // 已知站点的正文容器：命中就直接锁定，避免把导航/侧栏当成正文
+  const target = pickTargetSelector(url);
+  if (target) {
+    headers['x-target-selector'] = target;
+    console.log(`[jina] 指定正文容器：${target}`);
+  }
+  // 常见的站点外围元素，先删掉能显著降低噪音
+  headers['x-remove-selector'] =
+    'nav, header, footer, aside, .sidebar, #nav, #footer, #csdn-toolbar, ' +
+    '.toolbar, .recommend-box, .recommend, #recommend, .article-info-box, ' +
+    '.blog-footer, .hide-article-box, .passport-login-container';
+
   const raw = await fetchTextWithRetry(
     'https://r.jina.ai/' + url,
     headers,
     Number(process.env.JINA_TIMEOUT_MS || 30000),
     2
   );
-  const md = validThirdPartyMarkdown(raw);
+  const valid = validThirdPartyMarkdown(raw);
+  if (!valid) return null;
+  // 指定了容器时结果已相当干净，只需剥信封；没指定则做文本级净化
+  const md = target ? (validThirdPartyMarkdown(stripJinaEnvelope(valid)) || valid)
+                    : refineThirdPartyMarkdown(valid, url);
   if (md) console.log(`[jina] 成功，正文 ${md.length} 字符`);
   return md;
 }
