@@ -55,6 +55,22 @@ function getLastPartOfUrl(url){
   return last
 }
 
+// 下载 Markdown 文件。
+// 用 Blob 而非 data: URL —— data: URL 会被 encodeURIComponent 撑爆长度上限，
+// 长文会被截断，文件也随之损坏。同时在开头写入 UTF-8 BOM（\uFEFF），
+// 让 Windows 记事本 / 浏览器明确按 UTF-8 解码，避免中文显示为乱码。
+function downloadMarkdownFile(text, filename){
+  const blob = new Blob(["\uFEFF", text], { type: "text/markdown;charset=utf-8" })
+  const objectUrl = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = objectUrl
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  window.URL.revokeObjectURL(objectUrl)
+}
+
 // 问号帮助气泡：桌面端 hover 显示，触屏端点击开关（点外部关闭）。
 // 用 pointerType 区分鼠标与触摸，避免触摸的伪 hover 事件把气泡瞬间关掉。
 function HelpTooltip({children}){
@@ -221,12 +237,7 @@ export function Homepage() {
         title: t("successTitle"),
         description: t("successDesc"),
       })
-      const a = document.createElement('a');
-      a.href = `data:text/plain;charset=utf-8,${encodeURIComponent(md)}`;
-      a.download = `${getLastPartOfUrl(url)}.md` || "markdd.md";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      downloadMarkdownFile(md, `${getLastPartOfUrl(url) || "markdown"}.md`);
       track("Downloaded Markdown", {withImages: false})
 
     } 
@@ -275,12 +286,7 @@ export function Homepage() {
       } else {
         const md = await resp.text();
         toast({ title: t("successTitle"), description: t("successDesc") });
-        const a = document.createElement('a');
-        a.href = `data:text/plain;charset=utf-8,${encodeURIComponent(md)}`;
-        a.download = `${getLastPartOfUrl(url) || "markdown"}.md`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        downloadMarkdownFile(md, `${getLastPartOfUrl(url) || "markdown"}.md`);
         track("Downloaded Markdown", { pasted: true });
       }
     } catch (e) {
