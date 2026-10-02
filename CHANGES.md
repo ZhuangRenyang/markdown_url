@@ -258,3 +258,19 @@ git add . && git commit -m "..." && git push
   - 「粘贴网页内容」卡片新增 `<input type="file" accept=".html,.htm,.txt">`：选中后读取文本填入粘贴框并提示已载入；
   - 复用既有 `submitPasted()` 提交逻辑（同一套 HTML→Markdown 转换链路）。
 - `src/lib/i18n.js`：新增 `uploadHtmlLabel` / `fileLoadedTitle` / `fileLoadedHint` 中英文案。
+
+---
+
+## 第十一阶段：移除书签（Bookmarklet）功能
+
+书签方案在手机端体验差（无书签栏、需二次点击、弹窗易被拦），用户决定弃用。前端移除书签卡片。
+
+### 改动
+- `src/components/homepage.jsx`
+  - 删除「书签工具」卡片（UI）；
+  - 删除 `buildBookmarklet()` 函数、`copyBookmarklet()` 函数；
+  - 删除 `apiBase` / `bookmarkletCode` / `bookmarkletHref` 相关 state 与派生值。
+  - 修正删除过程中误伤的结构（补回 `return (` / `(<main ...>`，去掉多余 `}`）。
+- `src/lib/i18n.js`：修正上一阶段编辑造成的两处文案粘连（`pasteModeNote`/`pasteEmptyTitle`、`bookmarkletTitle`/`bookmarkletHelp`）；书签相关文案键保留（未被引用，无害）。
+
+> 首选的手机方案现在是：**「粘贴网页内容模式」+ 上传本地网页文件**。后端 `/api/fromhtml`、`/api/cookie`、`/api/admin-cookie` 等能力仍保留作兜底。

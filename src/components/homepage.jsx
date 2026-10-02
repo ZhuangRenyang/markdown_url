@@ -55,69 +55,6 @@ function getLastPartOfUrl(url){
   return last
 }
 
-// 生成「书签工具」的 javascript: 链接。脚本在用户已登录的文章页里运行，
-// 直接读取当前页面的完整 HTML（已含登录态），POST 到本站 /api/fromhtml 转成 Markdown。
-// 因此完全不需要用户懂 Cookie，也不需要服务端配置任何环境变量。
-function buildBookmarklet(base){
-  const API = String(base || "");
-  // 抓取 + 渲染结果。用真实函数 + toString() 序列化，避免手工转义导致的语法错误。
-  // 运行后：把当前页 HTML POST 到 /api/fromhtml，在新标签页展示 Markdown（可复制 / 下载）。
-  const runnerFn = function(){
-    var API = window.__MD_API__;
-    fetch(API + '/api/fromhtml', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html: document.documentElement.outerHTML, url: location.href, removeNonContent: true })
-    }).then(function(r){ return r.text(); }).then(function(md){
-      if (!md || md.length < 50) { alert('转换失败：正文为空，可能页面尚未渲染完成，请稍候重试。'); return; }
-      var blob = new Blob([md], { type: 'text/markdown' });
-      var w = window.open('', '_blank');
-      if (!w) { alert('被浏览器拦截，请允许弹出窗口后重试。'); return; }
-      var esc = md.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-      w.document.write('<!doctype html><meta charset=utf-8><title>Markdown</title>'
-        + '<div style="position:sticky;top:0;padding:8px;background:#1f2937;color:#fff;font:13px sans-serif;z-index:9">'
-        + '<button onclick="navigator.clipboard.writeText(document.getElementById(\'md\').value)">复制</button> '
-        + '<a download="article.md" href="' + URL.createObjectURL(blob) + '"><button>下载 .md</button></a> '
-        + '<span>已转换 ' + md.length + ' 字</span></div>'
-        + '<textarea id="md" style="width:100%;height:92vh;box-sizing:border-box;border:0;padding:12px;font:13px/1.5 monospace">' + esc + '</textarea>');
-      w.document.close();
-    }).catch(function(e){
-      alert('转换出错：' + (e && e.message ? e.message : e) + '\n\n若显示 Failed to fetch，通常是页面未加载完或被网络策略拦截。');
-    });
-  };
-  // 主逻辑：区分三种情形——带自动转换标记 / 在工具页 / 已在文章页
-  const mainFn = function(){
-    var API = window.__MD_API__;
-    var targetHost = ''; try { targetHost = new URL(API).host; } catch(e) {}
-    // 情形一：本页带 ?__mdrun=1（由书签从工具页跳转而来）→ 自动抓取，无需再点第二次
-    var hit = false;
-    try { hit = /(?:^|&)__mdrun=1(?:&|$)/.test((location.search||'').replace(/^\?/,'')); } catch(e) {}
-    if (hit) { setTimeout(function(){ window.__MD_RUN__(); }, 1200); return; }
-    // 情形二：在工具页点书签 → 读出输入框文章链接，跳过去并带上自动转换标记
-    if (targetHost && location.host === targetHost) {
-      var el = document.getElementById('md-src-url');
-      var tgt = el && el.value ? el.value.trim() : '';
-      if (tgt && /^https?:\/\//i.test(tgt)) {
-        var go = tgt + (tgt.indexOf('?') >= 0 ? '&' : '?') + '__mdrun=1';
-        var w0 = window.open(go, '_blank');
-        if (!w0) location.href = go;
-      } else {
-        alert('请先在页面输入框粘贴文章链接，再点本按钮。\n点完后会自动打开文章并转换。');
-      }
-      return;
-    }
-    // 情形三：已在文章页手动点书签 → 直接抓当前页
-    window.__MD_RUN__();
-  };
-  const code = '(function(){'
-    + 'window.__MD_API__=' + JSON.stringify(API) + ';'
-    + 'window.__MD_RUN__=' + runnerFn.toString() + ';'
-    + '(' + mainFn.toString() + ')();'
-    + '})();';
-  return 'javascript:' + code;
-}
-
-
 // 问号帮助气泡：桌面端 hover 显示，触屏端点击开关（点外部关闭）。
 // 用 pointerType 区分鼠标与触摸，避免触摸的伪 hover 事件把气泡瞬间关掉。
 function HelpTooltip({children}){
@@ -177,12 +114,6 @@ export function Homepage() {
   const [gptEnabled, setGptEnabled] = useState(false);
   const [applyGpt, setApplyGpt] = useState("");
   const [bigModel, setBigModel] = useState(false);
-  // 书签工具：接口地址固定用本站域名自动生成，不暴露输入框（避免被误填成文章地址导致 Failed to fetch）
-  const [apiBase] = useState(
-    typeof window !== "undefined" ? window.location.origin : "https://md.cati.cc.cd"
-  );
-  const bookmarkletCode = buildBookmarklet(apiBase);
-  const bookmarkletHref = "javascript:" + encodeURIComponent(bookmarkletCode.slice("javascript:".length));
 
   const [md, setMd] = useState("");
 
@@ -347,15 +278,6 @@ export function Homepage() {
     }
   }
 
-  // 复制书签代码（用户也可直接拖拽上方链接，无需复制）
-  async function copyBookmarklet() {    try {
-      await navigator.clipboard.writeText(bookmarkletCode);
-      toast({ title: t("bookmarkletCopied") });
-    } catch (e) {
-      toast({ title: t("failedTitle"), description: t("bookmarkletCopyFail") });
-    }
-  }
-
   return (
     (<main className="w-full min-h-[100vh] py-6 space-y-6 flex justify-center items-center relative">
       <Toaster />
@@ -503,39 +425,6 @@ export function Homepage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* 书签工具：在已登录文章页点一下即可转换，无需 cookie、无需环境变量 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {t("bookmarkletTitle")}
-                  <HelpTooltip>
-                    {t("bookmarkletHelp")}
-                  </HelpTooltip>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  {t("bookmarkletDesc")}
-                </p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <a
-                    href={bookmarkletHref}
-                    title={t("bookmarkletDragHint")}
-                    className="inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
-                  >
-                    🔖 {t("bookmarkletDrag")}
-                  </a>
-                  <Button type="button" variant="secondary" size="sm" onClick={copyBookmarklet}>
-                    {t("bookmarkletCopyBtn")}
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 break-all">
-                  {t("bookmarkletUsage")}
-                </p>
-              </CardContent>
-            </Card>
-
             {downloadImages && (
               <Card>
               <CardHeader>

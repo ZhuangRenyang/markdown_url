@@ -54,11 +54,13 @@ const zh = {
   uploadHtmlLabel: "或：上传本地网页文件（.html/.htm/.txt）",
   fileLoadedTitle: "已载入文件",
   fileLoadedHint: "已载入：",
-  pasteModeNote: "已开启粘贴模式：请在下方粘贴内容后点「转换」，上方输入框可填文章链接（可选）。",  pasteEmptyTitle: "请先粘贴内容",
+  pasteModeNote: "已开启粘贴模式：请在下方粘贴内容后点「转换」，上方输入框可填文章链接（可选）。",
+  pasteEmptyTitle: "请先粘贴内容",
   pasteEmptyDesc: "把文章页复制的内容粘贴到上面的文本框再点转换。",
 
   // 书签工具：在已登录文章页点一下即可转换，无需 cookie / 环境变量
-  bookmarkletTitle: "书签工具",  bookmarkletHelp:
+  bookmarkletTitle: "书签工具",
+  bookmarkletHelp:
     "在已登录的文章页点一下书签即可转换，彻底免去复制 Cookie 和配置环境变量。适合 CSDN、知乎等反爬站点。",
   bookmarkletDesc:
     "把下面的书签拖到浏览器收藏栏（手机可长按链接→添加书签）。使用时：在本页粘贴文章链接 → 点书签，会自动打开文章并完成转换，Markdown 在新标签页弹出，可直接复制/下载。",
