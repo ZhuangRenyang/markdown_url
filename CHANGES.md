@@ -314,3 +314,31 @@ git add . && git commit -m "..." && git push
 ### 说明与局限
 - Jina Reader 对**普通站**效果好；对**强反爬站（CSDN 等）通过率有限**，可能返回反爬页 → 此时仍回落到「粘贴/上传」路径（前端已有自动降级提示）。
 - 数据经第三方中转，敏感 URL 请勿使用。
+
+---
+
+## 第十四阶段：第三方抓取兜底升级为「多服务链」
+
+单一 Jina 兜底对强反爬站成功率有限。改为**依次尝试多个第三方抓取服务**，谁先成功用谁，全部免费额度可用。
+
+### 改动
+- `src/pages/api/_scrapper.js`
+  - 抽公共函数：`validThirdPartyMarkdown()`（长度+反爬页校验）、`fetchTextWithTimeout()`；
+  - 新增服务适配器：
+    - `fetchMarkdownViaJina()` —— `https://r.jina.ai/<url>`（免费，无需 key）；
+    - `fetchMarkdownViaScraperAPI()` —— ScraperAPI（免费 5000/月，需 key，返回 HTML 再本地转 MD）；
+    - `fetchMarkdownViaScrapingAnt()` —— ScrapingAnt（免费 10000/月，需 key，同上）；
+  - 新增 `fetchMarkdownViaFallbacks()`：按顺序尝试上述服务，返回第一个有效结果；
+  - `fetchCleanMarkdownFromUrl` 的两处失败点改为调用 `fetchMarkdownViaFallbacks()`。
+
+### 环境变量（全部可选，不填即跳过对应服务）
+| 变量 | 作用 |
+|---|---|
+| `JINA_API_KEY` | Jina key（可选，提高限速） |
+| `JINA_READER=off` | 关闭 Jina |
+| `SCRAPERAPI_KEY` | ScraperAPI key（免费 5000/月） |
+| `SCRAPINGANT_KEY` | ScrapingAnt key（免费 10000/月） |
+| `*_TIMEOUT_MS` | 各服务超时 |
+
+### 完整链路
+服务端直抓 → Jina → ScraperAPI → ScrapingAnt → 全失败则前端自动降级到「粘贴/上传」。

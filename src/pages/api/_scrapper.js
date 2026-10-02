@@ -147,35 +147,103 @@ export function htmlToMarkdown(data, url, removeNonContent){
   return turndownService.turndown(`<h1>${article.title}</h1>${article.content}`);
 }
 
-// 第三方抓取兜底：Jina Reader（免费，https://r.jina.ai/<url>），把目标页转成 Markdown 返回。
-// 服务端直抓被反爬拦（如 CSDN 521 / 知乎 403）或 SPA 拿不到正文时，用它再试一次。
-// 可用环境变量 JINA_READER=off 关闭；JINA_API_KEY 可选（提高限速与稳定性）。
-async function fetchMarkdownViaJina(url){
-  if ((process.env.JINA_READER || '').toLowerCase() === 'off') return null;
-  const endpoint = 'https://r.jina.ai/' + url;
+// ================= 第三方抓取兜底服务链 =================
+// 服务端直抓被反爬拦（CSDN 521 / 知乎 403）或 SPA 拿不到正文时，依次尝试下列服务。
+// 全部通过环境变量控制，不填 key 的服务自动跳过；关闭某个服务可设 <NAME>=off。
+
+// 通用：把第三方返回的文本当 Markdown 校验（长度 + 反爬页）
+function validThirdPartyMarkdown(md){
+  if (!md) return null;
+  const t = String(md).trim();
+  if (t.length < MIN_CONTENT_LENGTH) return null;
+  if (looksLikeAntiBotPage(t)) return null;
+  return t;
+}
+
+// 用统一的超时 fetch 拉文本
+async function fetchTextWithTimeout(endpoint, headers, timeoutMs){
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Number(process.env.JINA_TIMEOUT_MS || 30000));
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    console.log('[jina] 兜底：通过 Jina Reader 抓取...');
-    const headers = { 'accept': 'text/plain' };
-    if (process.env.JINA_API_KEY) headers['authorization'] = 'Bearer ' + process.env.JINA_API_KEY;
     const resp = await fetch(endpoint, { signal: controller.signal, headers });
     if (!resp.ok) {
-      console.log(`[jina] 失败 HTTP ${resp.status}`);
+      console.log(`[fetch] ${endpoint.slice(0,60)} HTTP ${resp.status}`);
       return null;
     }
-    const md = await resp.text();
-    // 命中反爬/失败页则视为无效
-    if (!md || md.trim().length < MIN_CONTENT_LENGTH) return null;
-    if (looksLikeAntiBotPage(md)) return null;
-    console.log(`[jina] 成功，正文 ${md.length} 字符`);
-    return md.trim();
+    return await resp.text();
   } catch (e) {
-    console.log('[jina] 异常:', e && e.message ? e.message : e);
+    console.log(`[fetch] ${endpoint.slice(0,60)} 异常:`, e && e.message ? e.message : e);
     return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+// 1) Jina Reader（免费，无需 key）
+async function fetchMarkdownViaJina(url){
+  if ((process.env.JINA_READER || '').toLowerCase() === 'off') return null;
+  const headers = { 'accept': 'text/plain' };
+  if (process.env.JINA_API_KEY) headers['authorization'] = 'Bearer ' + process.env.JINA_API_KEY;
+  const raw = await fetchTextWithTimeout('https://r.jina.ai/' + url, headers, Number(process.env.JINA_TIMEOUT_MS || 30000));
+  const md = validThirdPartyMarkdown(raw);
+  if (md) console.log(`[jina] 成功，正文 ${md.length} 字符`);
+  return md;
+}
+
+// 2) ScraperAPI（免费 5000/月，需 SCRAPERAPI_KEY）
+async function fetchMarkdownViaScraperAPI(url){
+  const key = process.env.SCRAPERAPI_KEY;
+  if (!key || key.toLowerCase() === 'off') return null;
+  const endpoint = `https://api.scraperapi.com/?api_key=${encodeURIComponent(key)}&url=${encodeURIComponent(url)}`;
+  const raw = await fetchTextWithTimeout(endpoint, {}, Number(process.env.SCRAPERAPI_TIMEOUT_MS || 40000));
+  if (!raw) return null;
+  // 该服务返回 HTML，用本地逻辑转 MD
+  try {
+    const md = htmlToMarkdown(raw, url, true);
+    const ok = validThirdPartyMarkdown(md);
+    if (ok) console.log(`[scraperapi] 成功，正文 ${ok.length} 字符`);
+    return ok;
+  } catch (e) {
+    console.log('[scraperapi] 转换失败:', e.message);
+    return null;
+  }
+}
+
+// 3) ScrapingAnt（免费 10000/月，需 SCRAPINGANT_KEY）
+async function fetchMarkdownViaScrapingAnt(url){
+  const key = process.env.SCRAPINGANT_KEY;
+  if (!key || key.toLowerCase() === 'off') return null;
+  const endpoint = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${encodeURIComponent(key)}`;
+  const raw = await fetchTextWithTimeout(endpoint, {}, Number(process.env.SCRAPINGANT_TIMEOUT_MS || 40000));
+  if (!raw) return null;
+  try {
+    const md = htmlToMarkdown(raw, url, true);
+    const ok = validThirdPartyMarkdown(md);
+    if (ok) console.log(`[scrapingant] 成功，正文 ${ok.length} 字符`);
+    return ok;
+  } catch (e) {
+    console.log('[scrapingant] 转换失败:', e.message);
+    return null;
+  }
+}
+
+// 依次尝试所有兜底服务，返回第一个成功的 Markdown；全失败返回 null
+async function fetchMarkdownViaFallbacks(url){
+  const providers = [
+    ['jina', fetchMarkdownViaJina],
+    ['scraperapi', fetchMarkdownViaScraperAPI],
+    ['scrapingant', fetchMarkdownViaScrapingAnt],
+  ];
+  for (const [name, fn] of providers) {
+    try {
+      console.log(`[fallback] 尝试 ${name} ...`);
+      const md = await fn(url);
+      if (md) return md;
+    } catch (e) {
+      console.log(`[fallback] ${name} 异常:`, e && e.message ? e.message : e);
+    }
+  }
+  return null;
 }
 
 // Define the function using ES6 arrow function syntax
@@ -195,11 +263,11 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
       markdown = htmlToMarkdown(data, url, removeNonContent);
       console.log(`[plain] 成功，正文 ${markdown.length} 字符`);
     } catch (e) {
-      // 直抓失败（反爬 5xx/403、SPA 空壳等）→ 自动改用 Jina Reader 兜底再试一次
-      console.log(`[plain] 失败：${e.message}，尝试 Jina 兜底...`);
-      const jinaMd = await fetchMarkdownViaJina(url);
-      if (jinaMd) {
-        markdown = jinaMd;
+      // 直抓失败（反爬 5xx/403、SPA 空壳等）→ 自动走第三方兜底服务链再试
+      console.log(`[plain] 失败：${e.message}，尝试第三方兜底...`);
+      const fbMd = await fetchMarkdownViaFallbacks(url);
+      if (fbMd) {
+        markdown = fbMd;
       } else {
         throw new Error(
           `抓取失败：${e.message}。` +
@@ -209,10 +277,10 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
     }
 
     if (markdown.trim().length < MIN_CONTENT_LENGTH){
-      // 直抓得到的正文太短也走 Jina 兜底（SPA 常见）
-      const jinaMd = await fetchMarkdownViaJina(url);
-      if (jinaMd) {
-        markdown = jinaMd;
+      // 直抓得到的正文太短也走兜底服务链（SPA 常见）
+      const fbMd = await fetchMarkdownViaFallbacks(url);
+      if (fbMd) {
+        markdown = fbMd;
       } else {
         throw new Error(
           '抓取到的正文太少（不足 ' + MIN_CONTENT_LENGTH + ' 字）。' +
