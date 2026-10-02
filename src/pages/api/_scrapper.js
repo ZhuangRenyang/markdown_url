@@ -13,7 +13,12 @@ const gptModel = process.env.OPENAI_MODEL || 'agnes-3.0-flash';
 const gptModelBig = process.env.OPENAI_MODEL_BIG || process.env.OPENAI_MODEL || 'agnes-3.0-flash';
 
 // 抓取策略：只用普通 HTTP 请求，不启动任何浏览器（最简单、零额外依赖）
-const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || 15000);
+//
+// ⚠️ 超时预算：Vercel Serverless 函数硬上限 60 秒（tomd.js 里 maxDuration: 60）。
+// 而下方第三方服务的抓取都走 fetchTextWithRetry(..., attempts = 2)，
+// 最坏耗时 = 单次超时 × 2。因此这里每个超时值都必须 ≤ 12 秒，
+// 保证「单服务最坏 24 秒」，即使兜底链连续走两三个服务也不会撞上 60 秒被杀。
+const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || 10000);
 // 抓到的正文少于这个字符数，认为「可能是 JS 渲染的空壳」，给明确提示而不是返回空结果
 const MIN_CONTENT_LENGTH = Number(process.env.MIN_CONTENT_LENGTH || 200);
 
@@ -349,7 +354,7 @@ async function fetchMarkdownViaJina(url, userKey){
   const raw = await fetchTextWithRetry(
     'https://r.jina.ai/' + url,
     headers,
-    Number(process.env.JINA_TIMEOUT_MS || 30000),
+    Number(process.env.JINA_TIMEOUT_MS || 12000),
     2
   );
   const valid = validThirdPartyMarkdown(raw);
@@ -370,7 +375,7 @@ async function fetchMarkdownViaScraperAPI(url, userKey){
   const key = userKey || process.env.SCRAPERAPI_KEY;
   if (!key || key.toLowerCase() === 'off') return null;
   const endpoint = `https://api.scraperapi.com/?api_key=${encodeURIComponent(key)}&url=${encodeURIComponent(url)}`;
-  const raw = await fetchTextWithRetry(endpoint, {}, Number(process.env.SCRAPERAPI_TIMEOUT_MS || 40000), 2);
+  const raw = await fetchTextWithRetry(endpoint, {}, Number(process.env.SCRAPERAPI_TIMEOUT_MS || 12000), 2);
   if (!raw) return null;
   // 该服务返回 HTML，用本地逻辑转 MD
   try {
@@ -389,7 +394,7 @@ async function fetchMarkdownViaScrapingAnt(url, userKey){
   const key = userKey || process.env.SCRAPINGANT_KEY;
   if (!key || key.toLowerCase() === 'off') return null;
   const endpoint = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${encodeURIComponent(key)}`;
-  const raw = await fetchTextWithRetry(endpoint, {}, Number(process.env.SCRAPINGANT_TIMEOUT_MS || 40000), 2);
+  const raw = await fetchTextWithRetry(endpoint, {}, Number(process.env.SCRAPINGANT_TIMEOUT_MS || 12000), 2);
   if (!raw) return null;
   try {
     const md = htmlToMarkdown(raw, url, true);
@@ -411,6 +416,17 @@ const PROVIDER_MAP = {
 // 后两个需要部署方配了 key 或用户自带 key 才真正生效，否则会立刻跳过。
 const PROVIDER_ORDER = ['jina', 'scraperapi', 'scrapingant'];
 
+// 单个第三方服务的「最坏耗时」估算（毫秒）：
+// 单次超时 12s × 2 次重试 + 中间 0.8s 间隔 ≈ 24.8s，取整 25s。
+// 用来判断「再试下一个服务会不会把总预算撑爆」。
+const PROVIDER_WORST_MS = 25000;
+
+// 兜底链的「总时间预算」（毫秒）。
+// Vercel 函数硬上限 60 秒，本地直抓(10s) 与后续 jsdom 解析、写盘还要占一部分，
+// 所以兜底链只给 32 秒——宁可少试一个服务，也不能让整个请求被杀进程
+// （被杀时会直接 504，用户看到的是「转换失败」，连有用的报错都拿不到）。
+const FALLBACK_TOTAL_BUDGET_MS = Number(process.env.FALLBACK_TOTAL_BUDGET_MS || 32000);
+
 // 抓取服务调度：
 // - providerConfig.provider 指定了某个服务 → 只用它（用户自带的 key 优先）
 // - auto / 未指定 → 按顺序把所有可用的服务试一遍，谁先成功用谁
@@ -423,9 +439,20 @@ async function fetchMarkdownViaFallbacks(url, providerConfig){
     ? [[wanted, PROVIDER_MAP[wanted]]]
     : PROVIDER_ORDER.map((name) => [name, PROVIDER_MAP[name]]);
 
+  // 用户显式指定了某一个服务 → 不设预算闸门（他就想用这个，让它跑完）
+  const explicit = wanted && wanted !== 'auto' && PROVIDER_MAP[wanted];
+
+  const startedAt = Date.now();
   for (const [name, fn] of list) {
+    const elapsed = Date.now() - startedAt;
+    // 预算闸门：只有当「已耗时 + 这个服务的最坏耗时」会超出总预算时才跳过。
+    // 这样第一个服务永远有机会跑；后续服务在时间不够时才让位，避免整体被杀。
+    if (!explicit && elapsed + PROVIDER_WORST_MS > FALLBACK_TOTAL_BUDGET_MS && elapsed > 0) {
+      console.log(`[fallback] 已耗时 ${elapsed}ms，再试 ${name} 可能超出预算 ${FALLBACK_TOTAL_BUDGET_MS}ms，跳过`);
+      continue;
+    }
     try {
-      console.log(`[fallback] 尝试 ${name} ...`);
+      console.log(`[fallback] 尝试 ${name} ...（已耗时 ${elapsed}ms）`);
       const md = await fn(url, userKey);
       if (md) return md;
     } catch (e) {
