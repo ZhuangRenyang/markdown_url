@@ -16,6 +16,7 @@ const zh = {
   subtitle2: "图片可一并打包下载",
 
   urlPlaceholder: "粘贴网页地址，例如 https://example.com",
+  clearInput: "清空输入框",
   convert: "转换",
   converting: "转换中...",
 
@@ -125,6 +126,7 @@ const en = {
   subtitle2: "w/ images downloaded.",
 
   urlPlaceholder: "Paste a webpage URL, e.g. https://example.com",
+  clearInput: "Clear input",
   convert: "Convert",
   converting: "Converting...",
 
