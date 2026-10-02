@@ -120,37 +120,37 @@ export function SettingsDialog({ open, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
       onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+        className="flex max-h-[88vh] w-full max-w-sm flex-col rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}>
-        <div className="mb-4 flex items-start justify-between">
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
           <div>
-            <h2 className="text-base font-semibold">{t("settingsTitle")}</h2>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <h2 className="text-sm font-semibold">{t("settingsTitle")}</h2>
+            <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
               {t("settingsSubtitle")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800">
+            className="-mr-1 shrink-0 rounded p-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800">
             ✕
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
           <div>
-            <Label className="mb-2 block text-sm">{t("apiSite")}</Label>
-            <div className="flex gap-2">
+            <Label className="mb-1.5 block text-xs font-medium">{t("apiSite")}</Label>
+            <div className="flex flex-wrap gap-1.5">
               {PRESETS.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => pickPreset(p)}
                   className={
-                    "rounded-lg px-3 py-1.5 text-xs transition-colors " +
+                    "rounded-md px-2.5 py-1 text-xs transition-colors " +
                     (preset === p.id
                       ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
@@ -162,7 +162,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1 block text-sm" htmlFor="cfg-baseurl">
+            <Label className="mb-1 block text-xs font-medium" htmlFor="cfg-baseurl">
               {t("baseUrl")}
             </Label>
             <Input
@@ -175,7 +175,7 @@ export function SettingsDialog({ open, onClose }) {
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <Label className="text-sm" htmlFor="cfg-apikey">
+              <Label className="text-xs font-medium" htmlFor="cfg-apikey">
                 {t("apiKey")}
               </Label>
               <button
@@ -196,7 +196,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="mb-1 block text-sm" htmlFor="cfg-model">
+            <Label className="mb-1 block text-xs font-medium" htmlFor="cfg-model">
               {t("model")}
             </Label>
             <Input
@@ -207,11 +207,11 @@ export function SettingsDialog({ open, onClose }) {
             />
           </div>
 
-          <p className="rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+          <p className="rounded-md bg-orange-50 px-2.5 py-1.5 text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
             ⚠ {t("keyWarning")}
           </p>
 
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-[11px]">
             <span className="text-gray-500 dark:text-gray-400">
               {t("status")}: <b className="text-gray-800 dark:text-gray-100">{statusText}</b>
             </span>
@@ -236,7 +236,7 @@ export function SettingsDialog({ open, onClose }) {
             </p>
           )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-1.5 pt-0.5">
             <Button variant="outline" className="flex-1" onClick={handleClear}>
               {t("clearKey")}
             </Button>
@@ -246,15 +246,15 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           {/* ===== 网页抓取服务：反爬 / SPA 站点用它来抓正文 ===== */}
-          <div className="mt-2 border-t border-gray-200 pt-4 dark:border-gray-700">
-            <h3 className="text-sm font-semibold">{t("fetchServiceTitle")}</h3>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
+            <h3 className="text-xs font-semibold">{t("fetchServiceTitle")}</h3>
+            <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
               {t("fetchServiceDesc")}
             </p>
           </div>
 
           <div>
-            <Label className="mb-2 block text-sm">{t("fetchProvider")}</Label>
+            <Label className="mb-1.5 block text-xs font-medium">{t("fetchProvider")}</Label>
             <div className="flex flex-wrap gap-2">
               {FETCH_PROVIDERS.map((p) => (
                 <button
@@ -262,7 +262,7 @@ export function SettingsDialog({ open, onClose }) {
                   type="button"
                   onClick={() => setFetchProvider(p.id)}
                   className={
-                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors " +
+                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors " +
                     (fetchProvider === p.id
                       ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300")
@@ -287,7 +287,7 @@ export function SettingsDialog({ open, onClose }) {
           </div>
 
           {fetchProvider === "auto" && (
-            <p className="rounded-lg bg-green-50 px-3 py-2 text-xs text-green-700 dark:bg-green-950/40 dark:text-green-300">
+            <p className="rounded-md bg-green-50 px-2.5 py-1.5 text-[11px] text-green-700 dark:bg-green-950/40 dark:text-green-300">
               ✓ {t("fetchAutoHelp")}
             </p>
           )}
@@ -295,7 +295,7 @@ export function SettingsDialog({ open, onClose }) {
           {activeFetchPreset.keyField ? (
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <Label className="text-sm" htmlFor="cfg-fetchkey">
+                <Label className="text-xs font-medium" htmlFor="cfg-fetchkey">
                   {activeFetchPreset.labelZh} {t("apiKey")}
                 </Label>
                 <button
@@ -315,7 +315,7 @@ export function SettingsDialog({ open, onClose }) {
                   setFetchKeys({ ...fetchKeys, [activeFetchPreset.keyField]: e.target.value })
                 }
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
                 {t("fetchKeyHelp")}
               </p>
             </div>
@@ -325,12 +325,12 @@ export function SettingsDialog({ open, onClose }) {
             activeFetchPreset.keyField &&
             !fetchKeys[activeFetchPreset.keyField] &&
             !activeFetchPreset.free && (
-              <p className="rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+              <p className="rounded-md bg-orange-50 px-2.5 py-1.5 text-[11px] text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
                 ⚠ {t("fetchNeedKey")}
               </p>
             )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-1.5 pt-0.5">
             <Button
               variant="outline"
               className="flex-1"
