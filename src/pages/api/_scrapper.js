@@ -20,8 +20,7 @@ const MIN_CONTENT_LENGTH = Number(process.env.MIN_CONTENT_LENGTH || 200);
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 // 普通 HTTP 请求：不消耗浏览器额度，速度快，但拿不到 JS 渲染后的内容
-// customHeaders：用户在前端「高级选项」传入的 Cookie / 自定义请求头（用于绕过 CSDN 等反爬）
-async function fetchHtmlPlain(url, customHeaders = {}){
+async function fetchHtmlPlain(url){
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -33,7 +32,6 @@ async function fetchHtmlPlain(url, customHeaders = {}){
         'user-agent': BROWSER_UA,
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        ...customHeaders,
       },
     });
     if (!resp.ok){
@@ -50,7 +48,7 @@ async function fetchHtmlPlain(url, customHeaders = {}){
 }
 
 // 反爬验证页识别：CSDN、知乎等会返回「请进行安全验证」之类的人机验证页。
-// 此时服务端没有下发正文，必须带登录态（Cookie）才能拿到文章。
+// 此时服务端没有下发正文，需要改走第三方抓取服务（见下方兜底链）。
 function looksLikeAntiBotPage(html){
   return /请进行安全验证|Security Verification|人机验证|访问验证|verify you are human|checking your browser/i.test(html);
 }
@@ -382,17 +380,17 @@ async function fetchMarkdownViaFallbacks(url, providerConfig){
 }
 
 // Define the function using ES6 arrow function syntax
-const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}, customHeaders = {}, providerConfig = {}) => {
+const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}, providerConfig = {}) => {
   try {
     let markdown;
 
     try {
-      const data = await fetchHtmlPlain(url, customHeaders);
-      // 反爬验证页：明确报错，提示用户带登录 Cookie
+      const data = await fetchHtmlPlain(url);
+      // 反爬验证页：抛错以触发下方的第三方抓取兜底
       if (looksLikeAntiBotPage(data)){
         throw new Error(
           '抓取到的页面是反爬验证页（如 CSDN 的「请进行安全验证」）。' +
-          '该站点拦截了无登录态的请求，请登录后在「高级选项」中粘贴 Cookie 再转换。'
+          '该站点拦截了无登录态的请求，将改走第三方抓取服务。'
         );
       }
       markdown = htmlToMarkdown(data, url, removeNonContent);
