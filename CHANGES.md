@@ -292,3 +292,25 @@ git add . && git commit -m "..." && git push
 ### 现在的完整逻辑
 1. 贴 URL → 服务端直抓 → 成功即出 Markdown（普通站点一步到位）；
 2. 失败（反爬/SPA）→ 自动切粘贴模式 + 明确引导 → 用户复制正文或上传 .html 即可转换。
+
+---
+
+## 第十三阶段：接入 Jina Reader 作为抓取兜底
+
+服务端直抓只能搞定静态站；反爬站（CSDN 521）/SPA（掘金）抓不到。为提升"贴 URL 直接转换"的覆盖率，接入**第三方抓取服务 Jina Reader**（免费、无需注册即可用）作为**自动兜底**。
+
+### 改动
+- `src/pages/api/_scrapper.js`
+  - 新增 `fetchMarkdownViaJina(url)`：请求 `https://r.jina.ai/<url>`，直接把目标页转成 Markdown 返回；
+  - 在 `fetchCleanMarkdownFromUrl` 的两处失败点接入兜底：
+    1. 服务端直抓抛错（5xx/403/网络失败）→ 自动改用 Jina 再试；
+    2. 直抓成功但正文过短（SPA 空壳）→ 也用 Jina 再试；
+  - 兜底结果仍会做反爬页/长度校验，无效则抛出原错误。
+- 环境变量（均可选）：
+  - `JINA_READER=off`：关闭兜底；
+  - `JINA_API_KEY`：填了走你自己的 key（提高限速/稳定性）；
+  - `JINA_TIMEOUT_MS`：超时，默认 30000。
+
+### 说明与局限
+- Jina Reader 对**普通站**效果好；对**强反爬站（CSDN 等）通过率有限**，可能返回反爬页 → 此时仍回落到「粘贴/上传」路径（前端已有自动降级提示）。
+- 数据经第三方中转，敏感 URL 请勿使用。

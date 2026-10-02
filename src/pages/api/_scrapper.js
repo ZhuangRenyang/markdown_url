@@ -147,6 +147,37 @@ export function htmlToMarkdown(data, url, removeNonContent){
   return turndownService.turndown(`<h1>${article.title}</h1>${article.content}`);
 }
 
+// 第三方抓取兜底：Jina Reader（免费，https://r.jina.ai/<url>），把目标页转成 Markdown 返回。
+// 服务端直抓被反爬拦（如 CSDN 521 / 知乎 403）或 SPA 拿不到正文时，用它再试一次。
+// 可用环境变量 JINA_READER=off 关闭；JINA_API_KEY 可选（提高限速与稳定性）。
+async function fetchMarkdownViaJina(url){
+  if ((process.env.JINA_READER || '').toLowerCase() === 'off') return null;
+  const endpoint = 'https://r.jina.ai/' + url;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Number(process.env.JINA_TIMEOUT_MS || 30000));
+  try {
+    console.log('[jina] 兜底：通过 Jina Reader 抓取...');
+    const headers = { 'accept': 'text/plain' };
+    if (process.env.JINA_API_KEY) headers['authorization'] = 'Bearer ' + process.env.JINA_API_KEY;
+    const resp = await fetch(endpoint, { signal: controller.signal, headers });
+    if (!resp.ok) {
+      console.log(`[jina] 失败 HTTP ${resp.status}`);
+      return null;
+    }
+    const md = await resp.text();
+    // 命中反爬/失败页则视为无效
+    if (!md || md.trim().length < MIN_CONTENT_LENGTH) return null;
+    if (looksLikeAntiBotPage(md)) return null;
+    console.log(`[jina] 成功，正文 ${md.length} 字符`);
+    return md.trim();
+  } catch (e) {
+    console.log('[jina] 异常:', e && e.message ? e.message : e);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Define the function using ES6 arrow function syntax
 const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, imgDirName = "images", imagesBasePathOverride = undefined, removeNonContent = true, applyGpt="", bigModel = false, aiConfig = {}, customHeaders = {}) => {
   try {
@@ -164,18 +195,31 @@ const fetchCleanMarkdownFromUrl = async (url, filePath, fetchImages = false, img
       markdown = htmlToMarkdown(data, url, removeNonContent);
       console.log(`[plain] 成功，正文 ${markdown.length} 字符`);
     } catch (e) {
-      throw new Error(
-        `抓取失败：${e.message}。` +
-        '该网页可能需要 JS 渲染或拒绝了请求。'
-      );
+      // 直抓失败（反爬 5xx/403、SPA 空壳等）→ 自动改用 Jina Reader 兜底再试一次
+      console.log(`[plain] 失败：${e.message}，尝试 Jina 兜底...`);
+      const jinaMd = await fetchMarkdownViaJina(url);
+      if (jinaMd) {
+        markdown = jinaMd;
+      } else {
+        throw new Error(
+          `抓取失败：${e.message}。` +
+          '该网页可能需要 JS 渲染或拒绝了请求。'
+        );
+      }
     }
 
     if (markdown.trim().length < MIN_CONTENT_LENGTH){
-      throw new Error(
-        '抓取到的正文太少（不足 ' + MIN_CONTENT_LENGTH + ' 字）。' +
-        '该站点很可能是纯 JS 渲染（SPA），初始 HTML 里没有正文，普通 HTTP 请求拿不到。' +
-        '建议：①换贴该站的 AMP 版 / RSS / 原文链接；②若是你自己的站点，确认服务端有预渲染。'
-      );
+      // 直抓得到的正文太短也走 Jina 兜底（SPA 常见）
+      const jinaMd = await fetchMarkdownViaJina(url);
+      if (jinaMd) {
+        markdown = jinaMd;
+      } else {
+        throw new Error(
+          '抓取到的正文太少（不足 ' + MIN_CONTENT_LENGTH + ' 字）。' +
+          '该站点很可能是纯 JS 渲染（SPA），初始 HTML 里没有正文，普通 HTTP 请求拿不到。' +
+          '建议：①换贴该站的 AMP 版 / RSS / 原文链接；②若是你自己的站点，确认服务端有预渲染。'
+        );
+      }
     }
 
     fs.writeFileSync(filePath, markdown, 'utf8');
