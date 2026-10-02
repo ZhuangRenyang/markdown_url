@@ -124,21 +124,22 @@ function normalizeImages(doc, baseUrl){
 }
 
 // HTML -> Markdown
-function htmlToMarkdown(data, url, removeNonContent){
-  const doc = new JSDOM(data, { url });
-  normalizeImages(doc, url);
+export function htmlToMarkdown(data, url, removeNonContent){
+  const dom = new JSDOM(data, { url });
+  const document = dom.window.document;
+  normalizeImages(document, url);
   const turndownService = new TurndownService();
   if (!removeNonContent){
-    return turndownService.turndown(doc.window.document.body.innerHTML);
+    return turndownService.turndown(document.body.innerHTML);
   }
   // 先尝试已知站点模板容器，命中就直接用它，避开 Readability 的误判
-  const container = extractMainContainer(doc.window.document);
+  const container = extractMainContainer(document);
   if (container){
-    const title = doc.window.document.title || '';
+    const title = document.title || '';
     return turndownService.turndown(`<h1>${title}</h1>${container.innerHTML}`);
   }
   // 回退到 Readability
-  const reader = new Readability(doc.window.document);
+  const reader = new Readability(document);
   const article = reader.parse();
   if (!article){
     throw new Error('无法提取正文（Readability 返回空）');

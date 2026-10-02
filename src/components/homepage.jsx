@@ -61,6 +61,15 @@ function getLastPartOfUrl(url){
   return last
 }
 
+// 生成「书签工具」的 javascript: 链接。脚本在用户已登录的文章页里运行，
+// 直接读取当前页面的完整 HTML（已含登录态），POST 到本站 /api/fromhtml 转成 Markdown。
+// 因此完全不需要用户懂 Cookie，也不需要服务端配置任何环境变量。
+function buildBookmarklet(base){
+  const safe = String(base || "").replace(/'/g, "\\'")
+  const code = `(function(){var API='${safe}';var html=document.documentElement.outerHTML;var url=location.href;fetch(API+'/api/fromhtml',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:html,url:url,removeNonContent:true})}).then(function(r){return r.text();}).then(function(md){if(!md||md.length<50){alert('转换失败：正文为空，可能页面尚未渲染完成，请稍候重试。');return;}var blob=new Blob([md],{type:'text/markdown'});var w=window.open('','_blank');if(!w){alert('被浏览器拦截，请允许弹出窗口后重试。');return;}var esc=md.replace(/&/g,'&amp;').replace(/</g,'&lt;');w.document.write('<!doctype html><meta charset=utf-8><title>Markdown</title><div style=\"position:sticky;top:0;padding:8px;background:#1f2937;color:#fff;font:13px sans-serif;z-index:9\"><button onclick=\"navigator.clipboard.writeText(document.getElementById(\\'md\\').value)\">复制</button> <a download=\"article.md\" href=\"'+URL.createObjectURL(blob)+'\"><button>下载 .md</button></a> <span>已转换 '+md.length+' 字</span></div><textarea id=\"md\" style=\"width:100%;height:92vh;box-sizing:border-box;border:0;padding:12px;font:13px/1.5 monospace\">'+esc+'</textarea>');w.document.close();}).catch(function(e){alert('转换出错：'+(e&&e.message?e.message:e));});})();`
+  return 'javascript:' + code
+}
+
 
 function HelpTooltip({children}){
   return (
@@ -96,6 +105,12 @@ export function Homepage() {
   const [restoreToken, setRestoreToken] = useState("");
   const [restoreLink, setRestoreLink] = useState("");
   const [restoreBusy, setRestoreBusy] = useState(false);
+  // 书签工具：API 地址（默认当前站点源，自托管时可改）
+  const [apiBase, setApiBase] = useState(
+    typeof window !== "undefined" ? window.location.origin : "https://md.cati.cc.cd"
+  );
+  const bookmarkletCode = buildBookmarklet(apiBase);
+  const bookmarkletHref = "javascript:" + encodeURIComponent(bookmarkletCode.slice("javascript:".length));
 
   const [md, setMd] = useState("");
 
@@ -261,6 +276,16 @@ export function Homepage() {
     }
   }
 
+  // 复制书签代码（用户也可直接拖拽上方链接，无需复制）
+  async function copyBookmarklet() {
+    try {
+      await navigator.clipboard.writeText(bookmarkletCode);
+      toast({ title: t("bookmarkletCopied") });
+    } catch (e) {
+      toast({ title: t("failedTitle"), description: t("bookmarkletCopyFail") });
+    }
+  }
+
   return (
     (<main className="w-full min-h-[100vh] py-6 space-y-6 flex justify-center items-center relative">
       <Toaster />
@@ -390,7 +415,47 @@ export function Homepage() {
                 </div>
               </CardContent>
             </Card>
-            
+
+            {/* 书签工具：在已登录文章页点一下即可转换，无需 cookie、无需环境变量 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {t("bookmarkletTitle")}
+                  <HelpTooltip>
+                    {t("bookmarkletHelp")}
+                  </HelpTooltip>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                  {t("bookmarkletDesc")}
+                </p>
+                <div className="flex items-center gap-2 mb-3">
+                  <Input
+                    value={apiBase}
+                    type="text"
+                    onChange={val => setApiBase(val.target.value)}
+                    placeholder="https://md.cati.cc.cd"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href={bookmarkletHref}
+                    title={t("bookmarkletDragHint")}
+                    className="inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
+                  >
+                    🔖 {t("bookmarkletDrag")}
+                  </a>
+                  <Button type="button" variant="secondary" size="sm" onClick={copyBookmarklet}>
+                    {t("bookmarkletCopyBtn")}
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 break-all">
+                  {t("bookmarkletUsage")}
+                </p>
+              </CardContent>
+            </Card>
+
             {downloadImages && (
               <Card>
               <CardHeader>

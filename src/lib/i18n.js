@@ -43,6 +43,20 @@ const zh = {
   cookieHelp:
     "仅本次请求使用，不会保存到服务器。Cookie 含登录凭证，请勿在公开设备填写。",
 
+  // 书签工具：在已登录文章页点一下即可转换，无需 cookie / 环境变量
+  bookmarkletTitle: "书签工具",
+  bookmarkletHelp:
+    "在已登录的文章页点一下书签即可转换，彻底免去复制 Cookie 和配置环境变量。适合 CSDN、知乎等反爬站点。",
+  bookmarkletDesc:
+    "把下面的书签拖到浏览器收藏栏。之后打开任意已登录的文章页，点该书签即可把正文转成 Markdown——全程不需要懂 Cookie，也不用配置任何变量。",
+  bookmarkletDrag: "拖我到收藏栏 / 点我转换",
+  bookmarkletDragHint: "把此链接拖到书签栏；或右键收藏。以后在文章页点它即可转换。",
+  bookmarkletCopyBtn: "复制书签代码",
+  bookmarkletCopied: "已复制书签代码",
+  bookmarkletCopyFail: "复制失败，请手动复制上方链接。",
+  bookmarkletUsage:
+    "用法：①把上面的「🔖」拖进收藏栏；②打开要转换的文章页（已登录）；③点收藏栏里的书签，自动在新标签页生成 Markdown，可复制或下载。",
+
   // Cookie 保险箱 / 恢复链接：填一次，手机免粘贴
   generateRestoreBtn: "生成恢复链接",
   generating: "生成中...",
@@ -146,6 +160,20 @@ const en = {
   cookiePlaceholder: "Paste cookie, e.g. uuid_tt_dd=...; token=...",
   cookieHelp:
     "Used only for this request, never stored on the server. Contains login credentials — don't enter on shared devices.",
+
+  // Bookmarklet: one click on any logged-in article page, no cookie / no env vars
+  bookmarkletTitle: "Bookmarklet",
+  bookmarkletHelp:
+    "One click on any logged-in article page converts it — no cookie copy, no env vars. Great for anti-bot sites like CSDN or Zhihu.",
+  bookmarkletDesc:
+    "Drag the bookmarklet below to your bookmarks bar. Then open any logged-in article and click it to get Markdown — no cookie knowledge, no env config.",
+  bookmarkletDrag: "Drag me to bookmarks / Click to convert",
+  bookmarkletDragHint: "Drag this link to your bookmarks bar, or right-click to bookmark. Click it on any article page to convert.",
+  bookmarkletCopyBtn: "Copy bookmarklet",
+  bookmarkletCopied: "Bookmarklet copied",
+  bookmarkletCopyFail: "Copy failed, please copy the link above manually.",
+  bookmarkletUsage:
+    "How: ① drag the 🔖 above into your bookmarks bar; ② open the article (logged in); ③ click the bookmark — Markdown opens in a new tab, copy or download it.",
 
   // Cookie vault / restore link: set once, no paste on phone
   generateRestoreBtn: "Generate restore link",

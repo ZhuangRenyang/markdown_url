@@ -131,3 +131,37 @@ git add . && git commit -m "..." && git push
 - Cookie 不进代码仓库、不以明文出现在前端；管理员页展示仅掩码。
 - 管理员页默认口令 `mdcati` 仅为方便，生产务必设 `ADMIN_PASSWORD` 环境变量，否则他人可改预置 Cookie。
 - 共用的是站长自己的 CSDN 会话，有频率上限（个人低频使用足够）；Cookie 过期后在管理员页或环境变量重新设置即可。
+
+---
+
+## 第四阶段：书签工具（Bookmarklet，根治 Cookie / 环境变量痛点）
+
+第三阶段「预置 Cookie」对多站点不通用、环境变量又常过期。本阶段换个思路：
+**把"读页面"这一步挪到用户自己已登录的浏览器里**——用户的浏览器本来就有所有站点的登录态，所以服务端再也不需要 Cookie、也无需配置任何环境变量。任意反爬站（CSDN、知乎……）都能转，普通用户零操作。
+
+### 新增文件
+- `src/pages/api/fromhtml.js`：接收书签 POST 来的「当前页面完整 HTML」（已含登录态），在服务端转成 Markdown 返回。
+  - 带 `Access-Control-Allow-Origin: *` 并正确处理 `OPTIONS` 预检，允许跨域（书签运行在文章站源站）；
+  - 请求体上限放宽到 8MB（完整页面 HTML 可能较大）。
+
+### 改动
+- `src/pages/api/_scrapper.js`：
+  - 导出 `htmlToMarkdown(html, url, removeNonContent)`，供 fromhtml 端点复用；
+  - **修复 bug**：`htmlToMarkdown` 原把 JSDOM 实例误当 document 传给 `normalizeImages`（调用 `querySelectorAll` 为 undefined），会导致每次转换抛错。现统一用 `dom.window.document`。
+- `src/components/homepage.jsx`：新增「**书签工具**」卡片
+  - 显示可拖拽的书签链接（默认指向当前站点源，自托管可在输入框改 API 地址）；
+  - 含「复制书签代码」按钮；
+  - 书签代码读取 `document.documentElement.outerHTML` → POST `/api/fromhtml` → 新标签页展示 Markdown（可复制 / 下载 .md）。
+- `src/lib/i18n.js`：补中英文案。
+
+### 使用流程（最省心，任意站点通用）
+1. 打开 `你的域名`，把「🔖 拖我到收藏栏」拖进浏览器收藏栏；
+2. 打开要转换的文章页（**已登录**即可，CSDN / 知乎都行）；
+3. 点收藏栏里的书签 → 自动在弹出的新标签页生成 Markdown，可复制或下载。
+
+> 全程不需要懂 Cookie、不需要配环境变量；换站、Cookie 过期都与你无关。
+> 手机浏览器（iOS Safari / Android Chrome）同样支持书签，体验一致。
+
+### 备注
+- 之前各阶段的 Cookie / 环境变量能力仍保留作兜底（少数不支持书签的场景可用），但**首选路径已是书签**。
+- 书签依赖目标站点允许用户脚本运行（绝大多数站点允许）；个别极严格 CSP 站点可能拦截，属极少数。
