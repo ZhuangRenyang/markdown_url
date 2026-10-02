@@ -31,18 +31,12 @@ import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/toaster"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
- import { track } from "./analytics"
+import { track } from "./analytics"
 import { LanguageSwitch, useLanguage } from "./language-provider"
 import { SettingsDialog } from "./settings-dialog"
 import { useSettings } from "./settings-provider"
 import { Settings as SettingsIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Card,
   CardContent,
@@ -71,18 +65,45 @@ function buildBookmarklet(base){
 }
 
 
+// 问号帮助气泡：桌面端 hover 显示，触屏端点击开关（点外部关闭）。
+// 用 pointerType 区分鼠标与触摸，避免触摸的伪 hover 事件把气泡瞬间关掉。
 function HelpTooltip({children}){
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDocPointerDown(e){
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener("pointerdown", onDocPointerDown)
+    return () => document.removeEventListener("pointerdown", onDocPointerDown)
+  }, [open])
+
   return (
-    <TooltipProvider delayDuration={10}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button className="ml-2" variant="ghost" size="ghost"><Badge variant="outline">?</Badge></Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{children}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span ref={wrapRef} className="relative inline-flex ml-2 align-middle">
+      <Button
+        type="button"
+        variant="ghost"
+        size="ghost"
+        aria-label="帮助"
+        className="ml-0"
+        onPointerEnter={(e) => { if (e.pointerType === "mouse") setOpen(true) }}
+        onPointerLeave={(e) => { if (e.pointerType === "mouse") setOpen(false) }}
+        onClick={() => setOpen(o => !o)}
+      >
+        <Badge variant="outline">?</Badge>
+      </Button>
+      {open && (
+        <span
+          role="tooltip"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute left-1/2 top-full z-50 mt-2 w-64 max-w-[80vw] -translate-x-1/2 rounded-md border border-gray-200 bg-white p-3 text-xs leading-relaxed text-gray-700 shadow-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          {children}
+        </span>
+      )}
+    </span>
   )
 }
 export function Homepage() {
