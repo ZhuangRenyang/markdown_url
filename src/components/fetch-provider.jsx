@@ -9,35 +9,47 @@ import {
 
 const STORAGE_KEY = "markdowndown.fetch";
 
-// 抓取服务预设。auto = 让服务端自己挑（直抓失败自动走下面的服务链）。
-// 每个服务对应的 key 由用户自己填，只存在浏览器本地，随请求发给服务端用一次就走。
+// 抓取服务预设。auto = 默认，直接用免费服务（Jina Reader），无需任何注册。
+// 想用更强的服务再自己选、自己填 key，key 只存在浏览器本地，随请求发给服务端用一次就走。
 export const FETCH_PROVIDERS = [
   {
     id: "auto",
-    labelZh: "自动（推荐）",
-    labelEn: "Auto (recommended)",
+    labelZh: "自动（免费，推荐）",
+    labelEn: "Auto (free, recommended)",
     keyField: null,
+    free: true,
+    freeZh: "免费·无需注册",
+    freeEn: "Free · no signup",
   },
   {
     id: "jina",
     labelZh: "Jina Reader",
     labelEn: "Jina Reader",
     keyField: "jinaKey",
-    keyPlaceholder: "jina_... （可留空，免费版无需 key）",
+    keyPlaceholder: "可留空，免费版无需 key（填了额度更高）",
+    free: true,
+    freeZh: "免费",
+    freeEn: "Free",
   },
   {
     id: "scraperapi",
     labelZh: "ScraperAPI",
     labelEn: "ScraperAPI",
     keyField: "scraperapiKey",
-    keyPlaceholder: "ScraperAPI 的 API Key",
+    keyPlaceholder: "ScraperAPI 的 API Key（免费 5000 次/月）",
+    free: false,
+    freeZh: "需注册",
+    freeEn: "Signup",
   },
   {
     id: "scrapingant",
     labelZh: "ScrapingAnt",
     labelEn: "ScrapingAnt",
     keyField: "scrapingantKey",
-    keyPlaceholder: "ScrapingAnt 的 x-api-key",
+    keyPlaceholder: "ScrapingAnt 的 x-api-key（免费 10000 次/月）",
+    free: false,
+    freeZh: "需注册",
+    freeEn: "Signup",
   },
 ];
 
